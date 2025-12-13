@@ -3,6 +3,9 @@ using System;
 
 namespace QMSCientForm.Model
 {
+    /// <summary>
+    /// 产品信息模型
+    /// </summary>
     [Table(Name = "ProductInfo")]
     public class ProductInfoModel
     {
@@ -30,7 +33,7 @@ namespace QMSCientForm.Model
         public string spec { get; set; }
         
         /// <summary>
-        /// 编号 
+        /// 制造编号-唯一标识
         /// </summary>
         public string mfgno { get; set; }
         
@@ -64,7 +67,7 @@ namespace QMSCientForm.Model
         public string productname { get; set; }
 
         /// <summary>
-        /// ？
+        /// 版本号
         /// </summary>
         public string virsn { get; set; }
     }

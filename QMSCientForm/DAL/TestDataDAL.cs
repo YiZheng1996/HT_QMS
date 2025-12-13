@@ -10,28 +10,26 @@ namespace QMSCientForm.DAL
     /// </summary>
     public class TestDataDAL : BaseDAL
     {
-        /// <summary>
-        /// 查询测试数据
-        /// </summary>
-        public List<TestDataModel> Query(string projectNo, string deviceNo, string spec, 
-            string mfgNo, string tester, string qmsStatus, DateTime startDate, DateTime endDate)
+        public List<TestDataModel> Query(string projectNo, string deviceNo, string spec,
+     string mfgNo, string tester, string qmsStatus, DateTime startDate, DateTime endDate)
         {
             var query = freeSql.Select<TestDataModel>();
 
             // 时间范围
-            query = query.Where(t => t.create_time >= startDate && 
+            query = query.Where(t => t.create_time >= startDate &&
                                     t.create_time <= endDate.AddDays(1).AddSeconds(-1));
 
-            // 按项目筛选（通过产品规格）
+            // 按项目筛选
             if (!string.IsNullOrWhiteSpace(projectNo))
             {
-                var productSpecs = freeSql.Select<ProductInfoModel>()
+                // 先获取该项目的所有产品的制造编号
+                var productMfgnos = freeSql.Select<ProductInfoModel>()
                     .Where(p => p.projectno == projectNo)
-                    .ToList(p => p.spec);
-                
-                if (productSpecs.Any())
+                    .ToList(p => p.mfgno);  // 使用 mfgno
+
+                if (productMfgnos.Any())
                 {
-                    query = query.Where(t => productSpecs.Contains(t.spec));
+                    query = query.Where(t => productMfgnos.Contains(t.mfgno));  // 通过 mfgno 筛选
                 }
             }
 
@@ -69,25 +67,18 @@ namespace QMSCientForm.DAL
         }
 
         /// <summary>
-        /// 根据制造编号查询测试数据
+        /// 根据制造编号获取最新测试数据（每个测试项只取最新的）
         /// </summary>
-        public List<TestDataModel> GetByMfgno(string mfgno)
+        public List<TestDataModel> GetLatestByMfgno(string mfgno)
         {
             return freeSql.Select<TestDataModel>()
-                .Where(t => t.mfgno == mfgno)
-                .OrderBy(t => t.create_time)
-                .ToList();
-        }
-
-        /// <summary>
-        /// 根据制造编号获取测试数据
-        /// </summary>
-        public List<TestDataModel> GetByMfgNo(string mfgNo)
-        {
-            return freeSql.Select<TestDataModel>()
-                .Where(t => t.mfgno == mfgNo)
-                .OrderByDescending(t => t.create_time)
-                .ToList();
+               .Where(t => t.mfgno == mfgno)
+               .OrderBy(t => t.create_time)
+               .ToList()
+               // 按 cell_name 分组，每组只取最新的
+               .GroupBy(t => t.cell_name)
+               .Select(g => g.OrderByDescending(t => t.create_time).First())
+               .ToList();
         }
 
         /// <summary>

@@ -116,6 +116,7 @@ namespace QMSCientForm
             this.Name = "TestDetailQueryForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "试验项点明细查询";
+            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.panelTop.ResumeLayout(false);
             this.panelTop.PerformLayout();
             this.panelBottom.ResumeLayout(false);

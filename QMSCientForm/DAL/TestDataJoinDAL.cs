@@ -10,6 +10,7 @@ namespace QMSCientForm.DAL
     /// </summary>
     public class TestDataJoinDAL : BaseDAL
     {
+        #region 四张表联合查询 预留
         /// <summary>
         /// 完整测试信息（包含项目、产品、标准、设备）
         /// </summary>
@@ -21,52 +22,52 @@ namespace QMSCientForm.DAL
             public string cell_value { get; set; }
             public DateTime create_time { get; set; }
             public string tester { get; set; }
-            
+
             // 项目信息
             public string projectno { get; set; }
             public string projectname { get; set; }
-            
+
             // 产品信息
             public string mfgno { get; set; }
             public string spec { get; set; }
             public string train { get; set; }
-            
+
             // 测试标准
             public string paraname { get; set; }
             public string paraunit { get; set; }
             public string standmin { get; set; }
             public string standmax { get; set; }
             public string standard_range { get; set; }
-            
+
             // 设备信息
             public string deviceno { get; set; }
             public string devicename { get; set; }
-            
+
             // QMS信息
             public string qms_status { get; set; }
             public DateTime? qms_time { get; set; }
-            
+
             // 判断结果
             public string test_result { get; set; }
             public bool is_qualified { get; set; }
         }
 
         /// <summary>
-        /// 获取完整的测试信息
+        /// 获取完整的测试信息(包含项目、产品、标准、设备)
         /// </summary>
         public List<TestDataFullInfo> GetFullTestInfo(
-            string projectNo = null, 
-            string mfgNo = null, 
+            string projectNo = null,
+            string mfgNo = null,
             string spec = null,
             string deviceNo = null,
-            DateTime? startDate = null, 
+            DateTime? startDate = null,
             DateTime? endDate = null)
         {
-            var query = freeSql.Select<TestDataModel, ProductInfoModel, ProjectInfoModel, 
+            var query = freeSql.Select<TestDataModel, ProductInfoModel, ProjectInfoModel,
                 TestModelModel, DeviceInfoModel>()
                 .LeftJoin((td, prod, proj, tm, dev) => td.mfgno == prod.mfgno)
                 .LeftJoin((td, prod, proj, tm, dev) => prod.projectno == proj.projectno)
-                .LeftJoin((td, prod, proj, tm, dev) => 
+                .LeftJoin((td, prod, proj, tm, dev) =>
                     td.spec == tm.spec && td.cell_name == tm.cell_name)
                 .LeftJoin((td, prod, proj, tm, dev) => td.deviceno == dev.deviceno);
 
@@ -87,7 +88,7 @@ namespace QMSCientForm.DAL
                 query = query.Where((td, prod, proj, tm, dev) => td.create_time >= startDate.Value);
 
             if (endDate.HasValue)
-                query = query.Where((td, prod, proj, tm, dev) => 
+                query = query.Where((td, prod, proj, tm, dev) =>
                     td.create_time <= endDate.Value.AddDays(1).AddSeconds(-1));
 
             var results = query.ToList((td, prod, proj, tm, dev) => new TestDataFullInfo
@@ -98,28 +99,28 @@ namespace QMSCientForm.DAL
                 cell_value = td.cell_value,
                 create_time = td.create_time,
                 tester = td.tester,
-                
+
                 // 项目信息
                 projectno = proj.projectno,
                 projectname = proj.projectname,
-                
+
                 // 产品信息
                 mfgno = prod.mfgno,
                 spec = prod.spec,
                 train = prod.train,
-                
+
                 // 测试标准
                 paraname = tm.paraname,
                 paraunit = tm.paraunit,
                 standmin = tm.standmin,
                 standmax = tm.standmax,
-                standard_range = tm.standmin != null && tm.standmax != null ? 
+                standard_range = tm.standmin != null && tm.standmax != null ?
                     $"{tm.standmin}-{tm.standmax}" : "",
-                
+
                 // 设备信息
                 deviceno = dev.deviceno,
                 devicename = dev.devicename,
-                
+
                 // QMS信息
                 qms_status = td.qms_status,
                 qms_time = td.qms_time
@@ -135,13 +136,15 @@ namespace QMSCientForm.DAL
             return results;
         }
 
+        #endregion
+
         /// <summary>
         /// 判断测试结果
         /// </summary>
         private string CheckTestResult(string value, string min, string max)
         {
-            if (string.IsNullOrWhiteSpace(value) || 
-                string.IsNullOrWhiteSpace(min) || 
+            if (string.IsNullOrWhiteSpace(value) ||
+                string.IsNullOrWhiteSpace(min) ||
                 string.IsNullOrWhiteSpace(max))
             {
                 return "未知";
@@ -203,10 +206,14 @@ namespace QMSCientForm.DAL
             public double qualified_rate { get; set; }
         }
 
+        /// <summary>
+        /// 获取项目统计信息
+        /// </summary>
+        /// <returns></returns>
         public List<ProjectTestStatistics> GetProjectStatistics()
         {
             var allTests = GetFullTestInfo();
-            
+
             return allTests
                 .GroupBy(t => new { t.projectno, t.projectname })
                 .Select(g => new ProjectTestStatistics
@@ -220,30 +227,18 @@ namespace QMSCientForm.DAL
                     qms_success_count = g.Count(t => t.qms_status == "1"),
                     qms_fail_count = g.Count(t => t.qms_status == "2"),
                     qms_pending_count = g.Count(t => t.qms_status == "0" || string.IsNullOrEmpty(t.qms_status)),
-                    qualified_rate = g.Count() > 0 ? 
+                    qualified_rate = g.Count() > 0 ?
                         Math.Round((double)g.Count(t => t.is_qualified) / g.Count() * 100, 2) : 0
                 })
                 .ToList();
         }
 
-        /// <summary>
-        /// 获取设备使用统计
-        /// </summary>
-        public class DeviceUsageStatistics
-        {
-            public string deviceno { get; set; }
-            public string devicename { get; set; }
-            public int product_count { get; set; }
-            public int test_count { get; set; }
-            public DateTime? last_use_time { get; set; }
-            public int status_change_count { get; set; }
-        }
-
+        // 获取设备统计信息
         public List<DeviceUsageStatistics> GetDeviceStatistics()
         {
             var deviceDAL = new DeviceInfoDAL();
             var recordDAL = new DeviceRecordDAL();
-            
+
             var devices = deviceDAL.GetAll();
             var allTests = GetFullTestInfo();
 
@@ -263,22 +258,24 @@ namespace QMSCientForm.DAL
         }
 
         /// <summary>
-        /// 获取产品测试详情（用于测试详细信息窗体）
+        /// 获取设备使用统计
         /// </summary>
-        public class ProductTestDetail
+        public class DeviceUsageStatistics
         {
-            public string cell_name { get; set; }
-            public string paraname { get; set; }
-            public string cell_value { get; set; }
-            public string paraunit { get; set; }
-            public string standard_range { get; set; }
-            public string test_result { get; set; }
-            public DateTime create_time { get; set; }
+            public string deviceno { get; set; }
+            public string devicename { get; set; }
+            public int product_count { get; set; }
+            public int test_count { get; set; }
+            public DateTime? last_use_time { get; set; }
+            public int status_change_count { get; set; }
         }
+
+
+        #region 联合查询TestData与TestModel表
 
         public List<ProductTestDetail> GetProductTestDetail(string mfgNo)
         {
-            return freeSql.Select<TestDataModel, TestModelModel>()
+            var allData = freeSql.Select<TestDataModel, TestModelModel>()
                 .LeftJoin((td, tm) => td.spec == tm.spec && td.cell_name == tm.cell_name)
                 .Where((td, tm) => td.mfgno == mfgNo)
                 .OrderBy((td, tm) => td.create_time)
@@ -290,8 +287,14 @@ namespace QMSCientForm.DAL
                     tm.paraunit,
                     tm.standmin,
                     tm.standmax,
-                    td.create_time
-                })
+                    td.create_time,
+                    tm.remark
+                });
+
+            // 按 cell_name 分组，每组只取最新的一条
+            return allData
+                .GroupBy(t => t.cell_name)
+                .Select(g => g.OrderByDescending(t => t.create_time).First())
                 .Select(t => new ProductTestDetail
                 {
                     cell_name = t.cell_name,
@@ -300,9 +303,27 @@ namespace QMSCientForm.DAL
                     paraunit = t.paraunit,
                     standard_range = $"{t.standmin}-{t.standmax}",
                     test_result = CheckTestResult(t.cell_value, t.standmin, t.standmax),
-                    create_time = t.create_time
+                    create_time = t.create_time,
+                    test_remark = t.remark
                 })
                 .ToList();
         }
+
+
+        /// <summary>
+        /// 获取产品测试详情中间类（用于测试详细信息窗体）
+        /// </summary>
+        public class ProductTestDetail
+        {
+            public string cell_name { get; set; }
+            public string paraname { get; set; }
+            public string cell_value { get; set; }
+            public string paraunit { get; set; }
+            public string standard_range { get; set; }
+            public string test_result { get; set; }
+            public string test_remark { get; set; }
+            public DateTime create_time { get; set; }
+        }
+        #endregion
     }
 }

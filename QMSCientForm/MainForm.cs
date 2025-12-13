@@ -12,6 +12,7 @@ namespace QMSCientForm
         public MainForm()
         {
             InitializeComponent();
+            this.IsMdiContainer = true; // 设置为MDI容器
         }
 
         /// <summary>

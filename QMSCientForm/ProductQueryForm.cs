@@ -23,6 +23,49 @@ namespace QMSCientForm
         {
             InitializeComponent();
             LoadProjects();
+
+            // 添加表头全选 checkbox
+            AddHeaderCheckBox();
+        }
+
+        /// <summary>
+        /// 添加表头全选复选框
+        /// </summary>
+        private void AddHeaderCheckBox()
+        {
+            // 创建 checkbox 控件
+            CheckBox headerCheckBox = new CheckBox();
+            headerCheckBox.Size = new Size(15, 15);
+            headerCheckBox.BackColor = Color.Transparent;
+
+            // 添加点击事件
+            headerCheckBox.CheckedChanged += (sender, e) =>
+            {
+                if (dgvProducts.DataSource == null) return;
+
+                foreach (DataGridViewRow row in dgvProducts.Rows)
+                {
+                    row.Cells["colSelect"].Value = headerCheckBox.Checked;
+                }
+                Refresh();
+            };
+
+            // 将 checkbox 添加到表头
+            dgvProducts.Controls.Add(headerCheckBox);
+
+            // 调整位置到第一列表头中央
+            dgvProducts.CellPainting += (sender, e) =>
+            {
+                if (e.RowIndex == -1 && e.ColumnIndex == 0)
+                {
+                    Rectangle rect = e.CellBounds;
+                    Point checkBoxLocation = new Point(
+                        rect.Location.X + (rect.Width - headerCheckBox.Width) / 2,
+                        rect.Location.Y + (rect.Height - headerCheckBox.Height) / 2
+                    );
+                    headerCheckBox.Location = checkBoxLocation;
+                }
+            };
         }
 
         /// <summary>
@@ -33,21 +76,21 @@ namespace QMSCientForm
             try
             {
                 var projects = projectDAL.GetAll();
-                
+
                 cmbProject.Items.Clear();
                 cmbProject.Items.Add("全选");
-                
+
                 foreach (var project in projects)
                 {
                     cmbProject.Items.Add(project.projectno);
                 }
-                
+
                 if (cmbProject.Items.Count > 0)
                     cmbProject.SelectedIndex = 0;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"加载项目失败：{ex.Message}", "错误", 
+                MessageBox.Show($"加载项目失败：{ex.Message}", "错误",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -62,7 +105,7 @@ namespace QMSCientForm
                 // 获取查询条件
                 string projectNo = cmbProject.SelectedItem?.ToString();
                 if (projectNo == "全选") projectNo = null;
-                
+
                 string train = txtTrain.Text.Trim();
                 string spec = txtSpec.Text.Trim();
                 string mfgno = txtMfgno.Text.Trim();
@@ -79,6 +122,21 @@ namespace QMSCientForm
                 dgvProducts.DataSource = null;
                 dgvProducts.DataSource = products;
 
+                // 数据绑定后，设置列的只读属性
+                foreach (DataGridViewColumn column in dgvProducts.Columns)
+                {
+                    // checkbox 列保持可编辑
+                    if (column.Name == "colSelect")
+                    {
+                        column.ReadOnly = false;
+                    }
+                    else
+                    {
+                        // 其他列设为只读
+                        column.ReadOnly = true;
+                    }
+                }
+
                 // 设置列标题
                 if (dgvProducts.Columns["id"] != null)
                     dgvProducts.Columns["id"].Visible = false;
@@ -86,37 +144,40 @@ namespace QMSCientForm
                 if (dgvProducts.Columns["projectno"] != null)
                     dgvProducts.Columns["projectno"].HeaderText = "项目编号";
 
+                if (dgvProducts.Columns["projectname"] != null)
+                {
+                    dgvProducts.Columns["projectname"].HeaderText = "项目名称";
+                    dgvProducts.Columns["projectname"].Width = 200;
+                }
+
                 if (dgvProducts.Columns["train"] != null)
                     dgvProducts.Columns["train"].HeaderText = "列";
-                
+
                 if (dgvProducts.Columns["spec"] != null)
                     dgvProducts.Columns["spec"].HeaderText = "型号";
-                
+
                 if (dgvProducts.Columns["mfgno"] != null)
                     dgvProducts.Columns["mfgno"].HeaderText = "制造编号";
 
-                if (dgvProducts.Columns["projectname"] != null)
-                    dgvProducts.Columns["projectname"].HeaderText = "项目名称";
-                
                 // 隐藏不需要的列
                 if (dgvProducts.Columns["create_time"] != null)
                     dgvProducts.Columns["create_time"].Visible = false;
-                
+
                 if (dgvProducts.Columns["qms_status"] != null)
                     dgvProducts.Columns["qms_status"].Visible = false;
-                
+
                 if (dgvProducts.Columns["qms_time"] != null)
                     dgvProducts.Columns["qms_time"].Visible = false;
-                
+
                 if (dgvProducts.Columns["qms_rem"] != null)
                     dgvProducts.Columns["qms_rem"].Visible = false;
-                
+
                 if (dgvProducts.Columns["prdt_code"] != null)
                     dgvProducts.Columns["prdt_code"].Visible = false;
-                
+
                 if (dgvProducts.Columns["productname"] != null)
                     dgvProducts.Columns["productname"].Visible = false;
-                
+
                 if (dgvProducts.Columns["virsn"] != null)
                     dgvProducts.Columns["virsn"].Visible = false;
 
@@ -124,7 +185,7 @@ namespace QMSCientForm
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"查询失败：{ex.Message}", "错误", 
+                MessageBox.Show($"查询失败：{ex.Message}", "错误",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -157,7 +218,7 @@ namespace QMSCientForm
                     if (product == null) continue;
 
                     // 获取该产品的测试数据
-                    var testDataList = testDataDAL.GetByMfgno(product.mfgno);
+                    var testDataList = testDataDAL.GetLatestByMfgno(product.mfgno);
 
                     foreach (var testData in testDataList)
                     {
@@ -232,11 +293,11 @@ namespace QMSCientForm
                         delayMilliseconds: 200, // 每次请求间隔200ms
                         progressCallback: (current, total, response) =>
                         {
-                    // 更新进度
-                    lblProgress.Text = $"正在发送：{current}/{total}\n" +
-                                              $"当前结果：{(response.IsSuccess ? "成功" : response.resultMsg)}";
+                            // 更新进度
+                            lblProgress.Text = $"正在发送：{current}/{total}\n" +
+                                                      $"当前结果：{(response.IsSuccess ? "成功" : response.resultMsg)}";
                             Application.DoEvents(); // 刷新界面
-                }
+                        }
                     );
 
                     // 关闭进度窗口
@@ -279,13 +340,22 @@ namespace QMSCientForm
                 var product = dgvProducts.Rows[e.RowIndex].DataBoundItem as ProductInfoModel;
                 if (product == null) return;
 
+                // 检查是否有测试数据
+                var testDataList = testDataDAL.GetLatestByMfgno(product.mfgno);
+                if (testDataList == null || testDataList.Count == 0)
+                {
+                    MessageBox.Show(this, $"产品 {product.mfgno} 暂无测试数据", "提示",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
                 // 打开试验项点明细查询弹窗
                 TestDetailQueryForm detailForm = new TestDetailQueryForm(product);
                 detailForm.ShowDialog();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"打开详情失败：{ex.Message}", "错误", 
+                MessageBox.Show($"打开详情失败：{ex.Message}", "错误",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

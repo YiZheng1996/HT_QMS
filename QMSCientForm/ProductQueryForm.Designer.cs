@@ -195,7 +195,6 @@ namespace QMSCientForm
             this.dgvProducts.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dgvProducts.Location = new System.Drawing.Point(0, 80);
             this.dgvProducts.Name = "dgvProducts";
-            this.dgvProducts.ReadOnly = true;
             this.dgvProducts.RowHeadersVisible = false;
             this.dgvProducts.RowTemplate.Height = 30;
             this.dgvProducts.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
@@ -224,6 +223,7 @@ namespace QMSCientForm
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "试验信息发送 - 项目产品筛选查询";
+            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.panelTop.ResumeLayout(false);
             this.panelTop.PerformLayout();
             this.panelBottom.ResumeLayout(false);

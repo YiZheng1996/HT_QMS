@@ -42,6 +42,7 @@ namespace QMSCientForm
                 {
                     序号 = index + 1,
                     参数名称 = d.paraname,
+                    描述 = d.test_remark,
                     单元格 = d.cell_name,
                     标准值 = d.standard_range,
                     实测值 = d.cell_value,
