@@ -67,17 +67,28 @@ namespace QMSCientForm.DAL
         }
 
         /// <summary>
-        /// 根据制造编号获取最新测试数据（每个测试项只取最新的）
+        /// 根据制造编号和型号获取最新测试数据（每个测试项只取最新的）
         /// </summary>
-        public List<TestDataModel> GetLatestByMfgno(string mfgno)
+        public List<TestDataModel> GetLatestByMfgnoAndSpec(string mfgno, string spec)
+        {
+            return freeSql.Select<TestDataModel>()
+               .Where(t => t.mfgno == mfgno && t.spec == spec)
+               .OrderBy(t => t.create_time)
+               .ToList()
+               // 按 cell_name 分组,每组只取最新的
+               .GroupBy(t => t.cell_name)
+               .Select(g => g.OrderByDescending(t => t.create_time).First())
+               .ToList();
+        }
+
+        /// <summary>
+        /// 根据制造编号获取所有测试数据（可能包含多个型号）
+        /// </summary>
+        public List<TestDataModel> GetByMfgno(string mfgno)
         {
             return freeSql.Select<TestDataModel>()
                .Where(t => t.mfgno == mfgno)
-               .OrderBy(t => t.create_time)
-               .ToList()
-               // 按 cell_name 分组，每组只取最新的
-               .GroupBy(t => t.cell_name)
-               .Select(g => g.OrderByDescending(t => t.create_time).First())
+               .OrderByDescending(t => t.create_time)
                .ToList();
         }
 

@@ -122,7 +122,7 @@ namespace QMSCientForm
                 dgvProducts.DataSource = null;
                 dgvProducts.DataSource = products;
 
-                // 数据绑定后，设置列的只读属性
+                // 数据绑定后,设置列的只读属性
                 foreach (DataGridViewColumn column in dgvProducts.Columns)
                 {
                     // checkbox 列保持可编辑
@@ -217,8 +217,8 @@ namespace QMSCientForm
                     var product = row.DataBoundItem as ProductInfoModel;
                     if (product == null) continue;
 
-                    // 获取该产品的测试数据
-                    var testDataList = testDataDAL.GetLatestByMfgno(product.mfgno);
+                    // 修改:使用 mfgno + spec 获取测试数据
+                    var testDataList = testDataDAL.GetLatestByMfgnoAndSpec(product.mfgno, product.spec);
 
                     foreach (var testData in testDataList)
                     {
@@ -252,7 +252,7 @@ namespace QMSCientForm
                     return;
                 }
 
-                // 禁用按钮，防止重复点击
+                // 禁用按钮,防止重复点击
                 btnSubmit.Enabled = false;
                 btnQuery.Enabled = false;
                 this.Cursor = Cursors.WaitCursor;
@@ -340,12 +340,12 @@ namespace QMSCientForm
                 var product = dgvProducts.Rows[e.RowIndex].DataBoundItem as ProductInfoModel;
                 if (product == null) return;
 
-                // 检查是否有测试数据
-                var testDataList = testDataDAL.GetLatestByMfgno(product.mfgno);
+                // 使用 mfgno + spec 检查是否有测试数据
+                var testDataList = testDataDAL.GetLatestByMfgnoAndSpec(product.mfgno, product.spec);
                 if (testDataList == null || testDataList.Count == 0)
                 {
-                    MessageBox.Show(this, $"产品 {product.mfgno} 暂无测试数据", "提示",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, $"产品型号 {product.spec}\n\n制造编号 {product.mfgno}\n\n暂无测试数据。", "提示",
+                        MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     return;
                 }
 

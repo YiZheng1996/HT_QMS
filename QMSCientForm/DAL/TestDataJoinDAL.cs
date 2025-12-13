@@ -65,7 +65,8 @@ namespace QMSCientForm.DAL
         {
             var query = freeSql.Select<TestDataModel, ProductInfoModel, ProjectInfoModel,
                 TestModelModel, DeviceInfoModel>()
-                .LeftJoin((td, prod, proj, tm, dev) => td.mfgno == prod.mfgno)
+                // 修改关联条件:使用 mfgno + spec 联合关联
+                .LeftJoin((td, prod, proj, tm, dev) => td.mfgno == prod.mfgno && td.spec == prod.spec)
                 .LeftJoin((td, prod, proj, tm, dev) => prod.projectno == proj.projectno)
                 .LeftJoin((td, prod, proj, tm, dev) =>
                     td.spec == tm.spec && td.cell_name == tm.cell_name)
@@ -220,7 +221,8 @@ namespace QMSCientForm.DAL
                 {
                     projectno = g.Key.projectno,
                     projectname = g.Key.projectname,
-                    product_count = g.Select(t => t.mfgno).Distinct().Count(),
+                    // 修改:使用 mfgno + spec 组合计数
+                    product_count = g.Select(t => new { t.mfgno, t.spec }).Distinct().Count(),
                     test_count = g.Count(),
                     qualified_count = g.Count(t => t.is_qualified),
                     unqualified_count = g.Count(t => !t.is_qualified && t.test_result != "未知"),
@@ -246,7 +248,12 @@ namespace QMSCientForm.DAL
             {
                 deviceno = d.deviceno,
                 devicename = d.devicename,
-                product_count = allTests.Count(t => t.deviceno == d.deviceno && !string.IsNullOrEmpty(t.mfgno)),
+                // 修改:使用 mfgno + spec 组合计数
+                product_count = allTests.Where(t => t.deviceno == d.deviceno &&
+                    !string.IsNullOrEmpty(t.mfgno) && !string.IsNullOrEmpty(t.spec))
+                    .Select(t => new { t.mfgno, t.spec })
+                    .Distinct()
+                    .Count(),
                 test_count = allTests.Count(t => t.deviceno == d.deviceno),
                 last_use_time = allTests.Where(t => t.deviceno == d.deviceno)
                     .OrderByDescending(t => t.create_time)
@@ -273,11 +280,14 @@ namespace QMSCientForm.DAL
 
         #region 联合查询TestData与TestModel表
 
-        public List<ProductTestDetail> GetProductTestDetail(string mfgNo)
+        /// <summary>
+        /// 根据制造编号和型号获取产品测试详情
+        /// </summary>
+        public List<ProductTestDetail> GetProductTestDetail(string mfgNo, string spec)
         {
             var allData = freeSql.Select<TestDataModel, TestModelModel>()
                 .LeftJoin((td, tm) => td.spec == tm.spec && td.cell_name == tm.cell_name)
-                .Where((td, tm) => td.mfgno == mfgNo)
+                .Where((td, tm) => td.mfgno == mfgNo && td.spec == spec)
                 .OrderBy((td, tm) => td.create_time)
                 .ToList((td, tm) => new
                 {
@@ -291,7 +301,7 @@ namespace QMSCientForm.DAL
                     tm.remark
                 });
 
-            // 按 cell_name 分组，每组只取最新的一条
+            // 按 cell_name 分组,每组只取最新的一条
             return allData
                 .GroupBy(t => t.cell_name)
                 .Select(g => g.OrderByDescending(t => t.create_time).First())

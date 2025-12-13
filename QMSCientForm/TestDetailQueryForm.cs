@@ -20,10 +20,10 @@ namespace QMSCientForm
         {
             InitializeComponent();
             this.product = product;
-            
+
             // 设置窗体标题为产品信息
             this.Text = $"{product.spec}-{product.mfgno}";
-            
+
             LoadTestDetails();
         }
 
@@ -34,8 +34,8 @@ namespace QMSCientForm
         {
             try
             {
-                // 获取产品测试详情
-                var details = joinDAL.GetProductTestDetail(product.mfgno);
+                // 修改:使用 mfgno + spec 获取产品测试详情
+                var details = joinDAL.GetProductTestDetail(product.mfgno, product.spec);
 
                 // 创建用于显示的列表
                 var displayList = details.Select((d, index) => new
@@ -52,7 +52,7 @@ namespace QMSCientForm
 
                 // 绑定到DataGridView
                 dgvDetails.DataSource = displayList;
-                
+
                 // 根据判定结果设置行颜色
                 foreach (DataGridViewRow row in dgvDetails.Rows)
                 {
@@ -73,7 +73,7 @@ namespace QMSCientForm
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"加载测试详情失败：{ex.Message}", "错误", 
+                MessageBox.Show($"加载测试详情失败：{ex.Message}", "错误",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

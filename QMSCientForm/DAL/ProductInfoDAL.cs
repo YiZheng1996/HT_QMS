@@ -13,13 +13,13 @@ namespace QMSCientForm.DAL
         /// <summary>
         /// 查询产品信息
         /// </summary>
-        public List<ProductInfoModel> Query(string projectNo, string spec, string mfgNo, 
+        public List<ProductInfoModel> Query(string projectNo, string spec, string mfgNo,
             string train, string qmsStatus, DateTime startDate, DateTime endDate)
         {
             var query = freeSql.Select<ProductInfoModel>();
 
             // 时间范围
-            query = query.Where(p => p.create_time >= startDate && 
+            query = query.Where(p => p.create_time >= startDate &&
                                     p.create_time <= endDate.AddDays(1).AddSeconds(-1));
 
             // 项目编号
@@ -88,13 +88,24 @@ namespace QMSCientForm.DAL
         }
 
         /// <summary>
-        /// 根据制造编号获取产品信息
+        /// 根据制造编号和型号获取产品信息（唯一标识）
         /// </summary>
-        public ProductInfoModel GetByMfgNo(string mfgNo)
+        public ProductInfoModel GetByMfgNoAndSpec(string mfgNo, string spec)
+        {
+            return freeSql.Select<ProductInfoModel>()
+                .Where(p => p.mfgno == mfgNo && p.spec == spec)
+                .First();
+        }
+
+        /// <summary>
+        /// 根据制造编号获取产品列表（可能有多个不同型号）
+        /// </summary>
+        public List<ProductInfoModel> GetListByMfgNo(string mfgNo)
         {
             return freeSql.Select<ProductInfoModel>()
                 .Where(p => p.mfgno == mfgNo)
-                .First();
+                .OrderByDescending(p => p.create_time)
+                .ToList();
         }
     }
 }
