@@ -303,8 +303,8 @@ namespace QMSCientForm.QMS
                 string logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] QMS响应 URL={url}\r\n{content}\r\n";
                 System.Diagnostics.Debug.WriteLine(logMessage);
 
-                // 可选：写入日志文件
-                // System.IO.File.AppendAllText("QmsApi.log", logMessage);
+                // 写入日志文件
+                System.IO.File.AppendAllText("QmsApi.log", logMessage);
             }
             catch { }
         }

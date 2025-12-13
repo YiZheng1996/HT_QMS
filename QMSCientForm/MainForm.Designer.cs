@@ -20,10 +20,10 @@ namespace QMSCientForm
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.btnTestInfo = new System.Windows.Forms.Button();
             this.btnDeviceInfo = new System.Windows.Forms.Button();
             this.SuspendLayout();
-
             // 
             // btnTestInfo
             // 
@@ -40,7 +40,6 @@ namespace QMSCientForm
             this.btnTestInfo.Click += new System.EventHandler(this.btnTestInfo_Click);
             this.btnTestInfo.MouseEnter += new System.EventHandler(this.Button_MouseEnter);
             this.btnTestInfo.MouseLeave += new System.EventHandler(this.Button_MouseLeave);
-
             // 
             // btnDeviceInfo
             // 
@@ -57,7 +56,6 @@ namespace QMSCientForm
             this.btnDeviceInfo.Click += new System.EventHandler(this.btnDeviceInfo_Click);
             this.btnDeviceInfo.MouseEnter += new System.EventHandler(this.Button_MouseEnter);
             this.btnDeviceInfo.MouseLeave += new System.EventHandler(this.Button_MouseLeave);
-
             // 
             // MainForm
             // 
@@ -67,10 +65,12 @@ namespace QMSCientForm
             this.ClientSize = new System.Drawing.Size(800, 400);
             this.Controls.Add(this.btnDeviceInfo);
             this.Controls.Add(this.btnTestInfo);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "QMS数据查询系统";
             this.ResumeLayout(false);
+
         }
 
         #endregion

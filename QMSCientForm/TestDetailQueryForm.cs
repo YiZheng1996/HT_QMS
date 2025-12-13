@@ -42,7 +42,7 @@ namespace QMSCientForm
                 {
                     序号 = index + 1,
                     参数名称 = d.paraname,
-                    描述 = d.cell_name,
+                    单元格 = d.cell_name,
                     标准值 = d.standard_range,
                     实测值 = d.cell_value,
                     单位 = d.paraunit,
@@ -51,40 +51,20 @@ namespace QMSCientForm
 
                 // 绑定到DataGridView
                 dgvDetails.DataSource = displayList;
-
-                // 设置列宽
-                if (dgvDetails.Columns["序号"] != null)
-                    dgvDetails.Columns["序号"].Width = 60;
                 
-                if (dgvDetails.Columns["参数名称"] != null)
-                    dgvDetails.Columns["参数名称"].Width = 150;
-                
-                if (dgvDetails.Columns["描述"] != null)
-                    dgvDetails.Columns["描述"].Width = 200;
-                
-                if (dgvDetails.Columns["标准值"] != null)
-                    dgvDetails.Columns["标准值"].Width = 100;
-                
-                if (dgvDetails.Columns["实测值"] != null)
-                    dgvDetails.Columns["实测值"].Width = 100;
-                
-                if (dgvDetails.Columns["单位"] != null)
-                    dgvDetails.Columns["单位"].Width = 80;
-                
-                if (dgvDetails.Columns["判定"] != null)
-                    dgvDetails.Columns["判定"].Width = 80;
-
                 // 根据判定结果设置行颜色
                 foreach (DataGridViewRow row in dgvDetails.Rows)
                 {
                     var result = row.Cells["判定"].Value?.ToString();
                     if (result == "不合格")
                     {
-                        row.DefaultCellStyle.BackColor = Color.FromArgb(255, 200, 200);
+                        //row.DefaultCellStyle.BackColor = Color.FromArgb(255, 200, 200);
+                        row.DefaultCellStyle.BackColor = Color.Red;
                     }
                     else if (result == "合格")
                     {
-                        row.DefaultCellStyle.BackColor = Color.FromArgb(200, 255, 200);
+                        //row.DefaultCellStyle.BackColor = Color.FromArgb(200, 255, 200);
+                        row.DefaultCellStyle.BackColor = Color.Green;
                     }
                 }
 

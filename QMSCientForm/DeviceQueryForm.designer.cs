@@ -20,6 +20,7 @@ namespace QMSCientForm
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DeviceQueryForm));
             this.panelTop = new System.Windows.Forms.Panel();
             this.btnSubmit = new System.Windows.Forms.Button();
             this.btnQuery = new System.Windows.Forms.Button();
@@ -39,7 +40,6 @@ namespace QMSCientForm
             this.panelBottom.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvRecords)).BeginInit();
             this.SuspendLayout();
-            
             // 
             // panelTop
             // 
@@ -59,107 +59,6 @@ namespace QMSCientForm
             this.panelTop.Name = "panelTop";
             this.panelTop.Size = new System.Drawing.Size(1200, 80);
             this.panelTop.TabIndex = 0;
-            
-            // 
-            // lblDeviceNo
-            // 
-            this.lblDeviceNo.AutoSize = true;
-            this.lblDeviceNo.Font = new System.Drawing.Font("微软雅黑", 10F);
-            this.lblDeviceNo.Location = new System.Drawing.Point(20, 30);
-            this.lblDeviceNo.Name = "lblDeviceNo";
-            this.lblDeviceNo.Size = new System.Drawing.Size(79, 20);
-            this.lblDeviceNo.TabIndex = 0;
-            this.lblDeviceNo.Text = "设备编号：";
-            
-            // 
-            // cmbDeviceNo
-            // 
-            this.cmbDeviceNo.Font = new System.Drawing.Font("微软雅黑", 10F);
-            this.cmbDeviceNo.FormattingEnabled = true;
-            this.cmbDeviceNo.Location = new System.Drawing.Point(105, 27);
-            this.cmbDeviceNo.Name = "cmbDeviceNo";
-            this.cmbDeviceNo.Size = new System.Drawing.Size(150, 27);
-            this.cmbDeviceNo.TabIndex = 1;
-            
-            // 
-            // lblDeviceName
-            // 
-            this.lblDeviceName.AutoSize = true;
-            this.lblDeviceName.Font = new System.Drawing.Font("微软雅黑", 10F);
-            this.lblDeviceName.Location = new System.Drawing.Point(270, 30);
-            this.lblDeviceName.Name = "lblDeviceName";
-            this.lblDeviceName.Size = new System.Drawing.Size(79, 20);
-            this.lblDeviceName.TabIndex = 2;
-            this.lblDeviceName.Text = "设备名称：";
-            
-            // 
-            // txtDeviceName
-            // 
-            this.txtDeviceName.Font = new System.Drawing.Font("微软雅黑", 10F);
-            this.txtDeviceName.Location = new System.Drawing.Point(355, 27);
-            this.txtDeviceName.Name = "txtDeviceName";
-            this.txtDeviceName.Size = new System.Drawing.Size(200, 25);
-            this.txtDeviceName.TabIndex = 3;
-            
-            // 
-            // lblStartDate
-            // 
-            this.lblStartDate.AutoSize = true;
-            this.lblStartDate.Font = new System.Drawing.Font("微软雅黑", 10F);
-            this.lblStartDate.Location = new System.Drawing.Point(570, 30);
-            this.lblStartDate.Name = "lblStartDate";
-            this.lblStartDate.Size = new System.Drawing.Size(107, 20);
-            this.lblStartDate.TabIndex = 4;
-            this.lblStartDate.Text = "查询开始日期：";
-            
-            // 
-            // dtpStartDate
-            // 
-            this.dtpStartDate.Font = new System.Drawing.Font("微软雅黑", 10F);
-            this.dtpStartDate.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dtpStartDate.Location = new System.Drawing.Point(680, 27);
-            this.dtpStartDate.Name = "dtpStartDate";
-            this.dtpStartDate.ShowCheckBox = true;
-            this.dtpStartDate.Size = new System.Drawing.Size(130, 25);
-            this.dtpStartDate.TabIndex = 5;
-            
-            // 
-            // lblEndDate
-            // 
-            this.lblEndDate.AutoSize = true;
-            this.lblEndDate.Font = new System.Drawing.Font("微软雅黑", 10F);
-            this.lblEndDate.Location = new System.Drawing.Point(820, 30);
-            this.lblEndDate.Name = "lblEndDate";
-            this.lblEndDate.Size = new System.Drawing.Size(107, 20);
-            this.lblEndDate.TabIndex = 6;
-            this.lblEndDate.Text = "查询结束日期：";
-            
-            // 
-            // dtpEndDate
-            // 
-            this.dtpEndDate.Font = new System.Drawing.Font("微软雅黑", 10F);
-            this.dtpEndDate.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dtpEndDate.Location = new System.Drawing.Point(930, 27);
-            this.dtpEndDate.Name = "dtpEndDate";
-            this.dtpEndDate.ShowCheckBox = true;
-            this.dtpEndDate.Size = new System.Drawing.Size(130, 25);
-            this.dtpEndDate.TabIndex = 7;
-            
-            // 
-            // btnQuery
-            // 
-            this.btnQuery.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(152)))), ((int)(((byte)(219)))));
-            this.btnQuery.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnQuery.Font = new System.Drawing.Font("微软雅黑", 10F, System.Drawing.FontStyle.Bold);
-            this.btnQuery.ForeColor = System.Drawing.Color.White;
-            this.btnQuery.Location = new System.Drawing.Point(1070, 10);
-            this.btnQuery.Name = "btnQuery";
-            this.btnQuery.Size = new System.Drawing.Size(100, 30);
-            this.btnQuery.TabIndex = 8;
-            this.btnQuery.Text = "查询";
-            this.btnQuery.UseVisualStyleBackColor = false;
-            this.btnQuery.Click += new System.EventHandler(this.btnQuery_Click);
-            
             // 
             // btnSubmit
             // 
@@ -174,7 +73,117 @@ namespace QMSCientForm
             this.btnSubmit.Text = "提交";
             this.btnSubmit.UseVisualStyleBackColor = false;
             this.btnSubmit.Click += new System.EventHandler(this.btnSubmit_Click);
-            
+            // 
+            // btnQuery
+            // 
+            this.btnQuery.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(52)))), ((int)(((byte)(152)))), ((int)(((byte)(219)))));
+            this.btnQuery.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnQuery.Font = new System.Drawing.Font("微软雅黑", 10F, System.Drawing.FontStyle.Bold);
+            this.btnQuery.ForeColor = System.Drawing.Color.White;
+            this.btnQuery.Location = new System.Drawing.Point(1070, 10);
+            this.btnQuery.Name = "btnQuery";
+            this.btnQuery.Size = new System.Drawing.Size(100, 30);
+            this.btnQuery.TabIndex = 8;
+            this.btnQuery.Text = "查询";
+            this.btnQuery.UseVisualStyleBackColor = false;
+            this.btnQuery.Click += new System.EventHandler(this.btnQuery_Click);
+            // 
+            // dtpEndDate
+            // 
+            this.dtpEndDate.Font = new System.Drawing.Font("微软雅黑", 10F);
+            this.dtpEndDate.Format = System.Windows.Forms.DateTimePickerFormat.Short;
+            this.dtpEndDate.Location = new System.Drawing.Point(930, 27);
+            this.dtpEndDate.Name = "dtpEndDate";
+            this.dtpEndDate.ShowCheckBox = true;
+            this.dtpEndDate.Size = new System.Drawing.Size(130, 25);
+            this.dtpEndDate.TabIndex = 7;
+            // 
+            // lblEndDate
+            // 
+            this.lblEndDate.AutoSize = true;
+            this.lblEndDate.Font = new System.Drawing.Font("微软雅黑", 10F);
+            this.lblEndDate.Location = new System.Drawing.Point(820, 30);
+            this.lblEndDate.Name = "lblEndDate";
+            this.lblEndDate.Size = new System.Drawing.Size(107, 20);
+            this.lblEndDate.TabIndex = 6;
+            this.lblEndDate.Text = "查询结束日期：";
+            // 
+            // dtpStartDate
+            // 
+            this.dtpStartDate.Font = new System.Drawing.Font("微软雅黑", 10F);
+            this.dtpStartDate.Format = System.Windows.Forms.DateTimePickerFormat.Short;
+            this.dtpStartDate.Location = new System.Drawing.Point(680, 27);
+            this.dtpStartDate.Name = "dtpStartDate";
+            this.dtpStartDate.ShowCheckBox = true;
+            this.dtpStartDate.Size = new System.Drawing.Size(130, 25);
+            this.dtpStartDate.TabIndex = 5;
+            // 
+            // lblStartDate
+            // 
+            this.lblStartDate.AutoSize = true;
+            this.lblStartDate.Font = new System.Drawing.Font("微软雅黑", 10F);
+            this.lblStartDate.Location = new System.Drawing.Point(570, 30);
+            this.lblStartDate.Name = "lblStartDate";
+            this.lblStartDate.Size = new System.Drawing.Size(107, 20);
+            this.lblStartDate.TabIndex = 4;
+            this.lblStartDate.Text = "查询开始日期：";
+            // 
+            // txtDeviceName
+            // 
+            this.txtDeviceName.Font = new System.Drawing.Font("微软雅黑", 10F);
+            this.txtDeviceName.Location = new System.Drawing.Point(355, 27);
+            this.txtDeviceName.Name = "txtDeviceName";
+            this.txtDeviceName.Size = new System.Drawing.Size(200, 25);
+            this.txtDeviceName.TabIndex = 3;
+            // 
+            // lblDeviceName
+            // 
+            this.lblDeviceName.AutoSize = true;
+            this.lblDeviceName.Font = new System.Drawing.Font("微软雅黑", 10F);
+            this.lblDeviceName.Location = new System.Drawing.Point(270, 30);
+            this.lblDeviceName.Name = "lblDeviceName";
+            this.lblDeviceName.Size = new System.Drawing.Size(79, 20);
+            this.lblDeviceName.TabIndex = 2;
+            this.lblDeviceName.Text = "设备名称：";
+            // 
+            // cmbDeviceNo
+            // 
+            this.cmbDeviceNo.Font = new System.Drawing.Font("微软雅黑", 10F);
+            this.cmbDeviceNo.FormattingEnabled = true;
+            this.cmbDeviceNo.Location = new System.Drawing.Point(105, 27);
+            this.cmbDeviceNo.Name = "cmbDeviceNo";
+            this.cmbDeviceNo.Size = new System.Drawing.Size(150, 27);
+            this.cmbDeviceNo.TabIndex = 1;
+            // 
+            // lblDeviceNo
+            // 
+            this.lblDeviceNo.AutoSize = true;
+            this.lblDeviceNo.Font = new System.Drawing.Font("微软雅黑", 10F);
+            this.lblDeviceNo.Location = new System.Drawing.Point(20, 30);
+            this.lblDeviceNo.Name = "lblDeviceNo";
+            this.lblDeviceNo.Size = new System.Drawing.Size(79, 20);
+            this.lblDeviceNo.TabIndex = 0;
+            this.lblDeviceNo.Text = "设备编号：";
+            // 
+            // panelBottom
+            // 
+            this.panelBottom.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(240)))), ((int)(((byte)(240)))));
+            this.panelBottom.Controls.Add(this.lblCount);
+            this.panelBottom.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.panelBottom.Location = new System.Drawing.Point(0, 550);
+            this.panelBottom.Name = "panelBottom";
+            this.panelBottom.Size = new System.Drawing.Size(1200, 40);
+            this.panelBottom.TabIndex = 2;
+            // 
+            // lblCount
+            // 
+            this.lblCount.AutoSize = true;
+            this.lblCount.Font = new System.Drawing.Font("微软雅黑", 9F);
+            this.lblCount.Location = new System.Drawing.Point(20, 12);
+            this.lblCount.Name = "lblCount";
+            this.lblCount.Size = new System.Drawing.Size(71, 17);
+            this.lblCount.TabIndex = 0;
+            this.lblCount.Text = "共 0 条记录";
             // 
             // dgvRecords
             // 
@@ -193,7 +202,6 @@ namespace QMSCientForm
             this.dgvRecords.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dgvRecords.Size = new System.Drawing.Size(1200, 470);
             this.dgvRecords.TabIndex = 1;
-            
             // 
             // colSelect
             // 
@@ -201,29 +209,6 @@ namespace QMSCientForm
             this.colSelect.HeaderText = "";
             this.colSelect.Name = "colSelect";
             this.colSelect.Resizable = System.Windows.Forms.DataGridViewTriState.False;
-            
-            // 
-            // panelBottom
-            // 
-            this.panelBottom.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(240)))), ((int)(((byte)(240)))));
-            this.panelBottom.Controls.Add(this.lblCount);
-            this.panelBottom.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panelBottom.Location = new System.Drawing.Point(0, 550);
-            this.panelBottom.Name = "panelBottom";
-            this.panelBottom.Size = new System.Drawing.Size(1200, 40);
-            this.panelBottom.TabIndex = 2;
-            
-            // 
-            // lblCount
-            // 
-            this.lblCount.AutoSize = true;
-            this.lblCount.Font = new System.Drawing.Font("微软雅黑", 9F);
-            this.lblCount.Location = new System.Drawing.Point(20, 12);
-            this.lblCount.Name = "lblCount";
-            this.lblCount.Size = new System.Drawing.Size(56, 17);
-            this.lblCount.TabIndex = 0;
-            this.lblCount.Text = "共 0 条记录";
-            
             // 
             // DeviceQueryForm
             // 
@@ -233,6 +218,7 @@ namespace QMSCientForm
             this.Controls.Add(this.dgvRecords);
             this.Controls.Add(this.panelBottom);
             this.Controls.Add(this.panelTop);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "DeviceQueryForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "设备信息查询发送";
@@ -242,6 +228,7 @@ namespace QMSCientForm
             this.panelBottom.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvRecords)).EndInit();
             this.ResumeLayout(false);
+
         }
 
         #endregion

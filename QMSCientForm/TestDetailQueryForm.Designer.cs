@@ -23,14 +23,13 @@ namespace QMSCientForm
             this.panelTop = new System.Windows.Forms.Panel();
             this.lblTitle = new System.Windows.Forms.Label();
             this.panelBottom = new System.Windows.Forms.Panel();
-            this.btnClose = new System.Windows.Forms.Button();
             this.lblCount = new System.Windows.Forms.Label();
+            this.btnClose = new System.Windows.Forms.Button();
             this.dgvDetails = new System.Windows.Forms.DataGridView();
             this.panelTop.SuspendLayout();
             this.panelBottom.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvDetails)).BeginInit();
             this.SuspendLayout();
-            
             // 
             // panelTop
             // 
@@ -41,7 +40,6 @@ namespace QMSCientForm
             this.panelTop.Name = "panelTop";
             this.panelTop.Size = new System.Drawing.Size(900, 50);
             this.panelTop.TabIndex = 0;
-            
             // 
             // lblTitle
             // 
@@ -53,25 +51,6 @@ namespace QMSCientForm
             this.lblTitle.Size = new System.Drawing.Size(126, 26);
             this.lblTitle.TabIndex = 0;
             this.lblTitle.Text = "试验项点明细";
-            
-            // 
-            // dgvDetails
-            // 
-            this.dgvDetails.AllowUserToAddRows = false;
-            this.dgvDetails.AllowUserToDeleteRows = false;
-            this.dgvDetails.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
-            this.dgvDetails.BackgroundColor = System.Drawing.Color.White;
-            this.dgvDetails.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvDetails.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.dgvDetails.Location = new System.Drawing.Point(0, 50);
-            this.dgvDetails.Name = "dgvDetails";
-            this.dgvDetails.ReadOnly = true;
-            this.dgvDetails.RowHeadersVisible = false;
-            this.dgvDetails.RowTemplate.Height = 30;
-            this.dgvDetails.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvDetails.Size = new System.Drawing.Size(900, 450);
-            this.dgvDetails.TabIndex = 1;
-            
             // 
             // panelBottom
             // 
@@ -83,7 +62,6 @@ namespace QMSCientForm
             this.panelBottom.Name = "panelBottom";
             this.panelBottom.Size = new System.Drawing.Size(900, 50);
             this.panelBottom.TabIndex = 2;
-            
             // 
             // lblCount
             // 
@@ -91,10 +69,9 @@ namespace QMSCientForm
             this.lblCount.Font = new System.Drawing.Font("微软雅黑", 9F);
             this.lblCount.Location = new System.Drawing.Point(20, 17);
             this.lblCount.Name = "lblCount";
-            this.lblCount.Size = new System.Drawing.Size(68, 17);
+            this.lblCount.Size = new System.Drawing.Size(71, 17);
             this.lblCount.TabIndex = 0;
             this.lblCount.Text = "共 0 项测试";
-            
             // 
             // btnClose
             // 
@@ -109,7 +86,24 @@ namespace QMSCientForm
             this.btnClose.Text = "关闭";
             this.btnClose.UseVisualStyleBackColor = false;
             this.btnClose.Click += new System.EventHandler(this.btnClose_Click);
-            
+            // 
+            // dgvDetails
+            // 
+            this.dgvDetails.AllowUserToAddRows = false;
+            this.dgvDetails.AllowUserToDeleteRows = false;
+            this.dgvDetails.AllowUserToResizeRows = false;
+            this.dgvDetails.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.dgvDetails.BackgroundColor = System.Drawing.Color.White;
+            this.dgvDetails.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dgvDetails.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.dgvDetails.Location = new System.Drawing.Point(0, 50);
+            this.dgvDetails.Name = "dgvDetails";
+            this.dgvDetails.ReadOnly = true;
+            this.dgvDetails.RowHeadersVisible = false;
+            this.dgvDetails.RowTemplate.Height = 30;
+            this.dgvDetails.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.dgvDetails.Size = new System.Drawing.Size(900, 450);
+            this.dgvDetails.TabIndex = 1;
             // 
             // TestDetailQueryForm
             // 
@@ -128,6 +122,7 @@ namespace QMSCientForm
             this.panelBottom.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvDetails)).EndInit();
             this.ResumeLayout(false);
+
         }
 
         #endregion

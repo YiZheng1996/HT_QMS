@@ -83,8 +83,8 @@ namespace QMSCientForm
                     dgvProducts.Columns["id"].Visible = false;
 
                 if (dgvProducts.Columns["projectno"] != null)
-                    dgvProducts.Columns["projectno"].HeaderText = "项目";
-                
+                    dgvProducts.Columns["projectno"].HeaderText = "项目编号";
+
                 if (dgvProducts.Columns["train"] != null)
                     dgvProducts.Columns["train"].HeaderText = "列";
                 
@@ -94,10 +94,10 @@ namespace QMSCientForm
                 if (dgvProducts.Columns["mfgno"] != null)
                     dgvProducts.Columns["mfgno"].HeaderText = "制造编号";
 
-                // 隐藏不需要的列
                 if (dgvProducts.Columns["projectname"] != null)
-                    dgvProducts.Columns["projectname"].Visible = false;
+                    dgvProducts.Columns["projectname"].HeaderText = "项目名称";
                 
+                // 隐藏不需要的列
                 if (dgvProducts.Columns["create_time"] != null)
                     dgvProducts.Columns["create_time"].Visible = false;
                 
