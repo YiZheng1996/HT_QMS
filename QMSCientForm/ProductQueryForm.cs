@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using QMSCientForm.DAL;
 using QMSCientForm.Model;
 using QMSCientForm.QMS;
+using QMSCientForm.QMS.Models;
 
 namespace QMSCientForm
 {
@@ -129,7 +130,7 @@ namespace QMSCientForm
         }
 
         /// <summary>
-        /// 提交按钮点击事件 - 发送到QMS
+        /// 提交按钮点击事件 - 批量发送到QMS
         /// </summary>
         private void btnSubmit_Click(object sender, EventArgs e)
         {
@@ -142,19 +143,13 @@ namespace QMSCientForm
 
                 if (selectedRows.Count == 0)
                 {
-                    MessageBox.Show("请至少选择一条记录", "提示", 
+                    MessageBox.Show("请至少选择一条记录", "提示",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
 
-                if (MessageBox.Show($"确定要发送选中的 {selectedRows.Count} 条产品数据到QMS吗？", 
-                    "确认", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
-                {
-                    return;
-                }
-
-                int successCount = 0;
-                int failCount = 0;
+                // 准备批量发送的请求列表
+                var requestList = new List<ProdInfoRequest>();
 
                 foreach (var row in selectedRows)
                 {
@@ -166,42 +161,108 @@ namespace QMSCientForm
 
                     foreach (var testData in testDataList)
                     {
-                        // 发送到QMS
-                        var response = QmsApiClient.SendProdInfo(
-                            projectNo: product.projectno,
-                            productNo: product.mfgno,
-                            paraName: testData.cell_name,
-                            paraUnit: "kPa", // 从TestModel获取
-                            standValue: "0-10", // 从TestModel获取
-                            actualValue: testData.cell_value,
-                            remark: ""
-                        );
+                        var request = new ProdInfoRequest
+                        {
+                            projectNo = product.projectno,
+                            productNo = product.mfgno,
+                            paraName = testData.cell_name,
+                            paraUnit = "kPa",
+                            standValue = "28-38",
+                            actualValue = testData.cell_value,
+                            remark = null
+                        };
 
-                        if (response.IsSuccess)
-                        {
-                            // 更新QMS状态
-                            testDataDAL.UpdateQmsStatus(testData.id, "1", 
-                                DateTime.Now, response.resultMsg);
-                            successCount++;
-                        }
-                        else
-                        {
-                            testDataDAL.UpdateQmsStatus(testData.id, "2", 
-                                DateTime.Now, response.resultMsg);
-                            failCount++;
-                        }
+                        requestList.Add(request);
                     }
                 }
 
-                MessageBox.Show($"发送完成！\n成功：{successCount} 条\n失败：{failCount} 条", 
-                    "完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (requestList.Count == 0)
+                {
+                    MessageBox.Show("没有可发送的数据", "提示",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
 
-                // 刷新数据
-                btnQuery_Click(null, null);
+                if (MessageBox.Show(
+                    $"准备发送 {requestList.Count} 条数据到QMS\n" +
+                    $"预计耗时约 {requestList.Count * 0.2} 秒\n\n确定继续？",
+                    "确认", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                {
+                    return;
+                }
+
+                // 禁用按钮，防止重复点击
+                btnSubmit.Enabled = false;
+                btnQuery.Enabled = false;
+                this.Cursor = Cursors.WaitCursor;
+
+                try
+                {
+                    // 创建进度窗口（可选）
+                    var progressForm = new Form
+                    {
+                        Text = "正在发送数据",
+                        Width = 400,
+                        Height = 120,
+                        FormBorderStyle = FormBorderStyle.FixedDialog,
+                        StartPosition = FormStartPosition.CenterParent,
+                        MaximizeBox = false,
+                        MinimizeBox = false
+                    };
+
+                    var lblProgress = new Label
+                    {
+                        Text = "准备发送...",
+                        AutoSize = false,
+                        Width = 360,
+                        Height = 40,
+                        Left = 20,
+                        Top = 20,
+                        TextAlign = ContentAlignment.MiddleLeft
+                    };
+                    progressForm.Controls.Add(lblProgress);
+
+                    // 异步显示进度窗口
+                    progressForm.Show(this);
+                    Application.DoEvents();
+
+                    // 批量发送（带进度回调）
+                    var result = QmsApiClient.SendProdInfoBatch(
+                        requestList.ToArray(),
+                        delayMilliseconds: 200, // 每次请求间隔200ms
+                        progressCallback: (current, total, response) =>
+                        {
+                    // 更新进度
+                    lblProgress.Text = $"正在发送：{current}/{total}\n" +
+                                              $"当前结果：{(response.IsSuccess ? "成功" : response.resultMsg)}";
+                            Application.DoEvents(); // 刷新界面
+                }
+                    );
+
+                    // 关闭进度窗口
+                    progressForm.Close();
+
+                    // 显示结果
+                    string message = $"发送完成！\n\n" +
+                                   $"总数量：{result.TotalCount}\n" +
+                                   $"成功：{result.SuccessCount}\n" +
+                                   $"失败：{result.FailCount}";
+
+                    MessageBox.Show(message, "发送结果",
+                        MessageBoxButtons.OK,
+                        result.IsAllSuccess ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+                }
+                finally
+                {
+                    // 恢复按钮状态
+                    btnSubmit.Enabled = true;
+                    btnQuery.Enabled = true;
+                    this.Cursor = Cursors.Default;
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"发送失败：{ex.Message}", "错误", 
+                MessageBox.Show($"批量发送失败：{ex.Message}", "错误",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

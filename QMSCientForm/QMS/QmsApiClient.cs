@@ -15,6 +15,7 @@ namespace QMSCientForm.QMS
     {
         private static readonly HttpClient httpClient;
         private static readonly object lockObj = new object();
+        private static int sequenceNumber = 0; // 序列号
 
         /// <summary>
         /// 静态构造函数
@@ -133,40 +134,66 @@ namespace QMSCientForm.QMS
                 paraUnit, standValue, actualValue, remark));
         }
 
-        ///// <summary>
-        ///// 批量发送生产参数
-        ///// </summary>
-        ///// <param name="requests">生产参数列表</param>
-        ///// <returns>成功数量和失败数量</returns>
-        //public static (int successCount, int failCount) SendProdInfoBatch(ProdInfoRequest[] requests)
-        //{
-        //    int successCount = 0;
-        //    int failCount = 0;
+        /// <summary>
+        /// 批量发送生产参数（带延迟和进度）
+        /// </summary>
+        /// <param name="requests">生产参数列表</param>
+        /// <param name="delayMilliseconds">每次请求之间的延迟（毫秒），默认200ms</param>
+        /// <param name="progressCallback">进度回调 (当前索引, 总数, 当前结果)</param>
+        /// <returns>批量发送结果</returns>
+        public static BatchSendResult SendProdInfoBatch(
+            ProdInfoRequest[] requests,
+            int delayMilliseconds = 200,
+            Action<int, int, QmsResponse> progressCallback = null)
+        {
+            var result = new BatchSendResult();
 
-        //    foreach (var request in requests)
-        //    {
-        //        // 补充固定字段
-        //        request.requestNo = GenerateRequestNo();
-        //        request.productCategory = QmsConfig.PRODUCT_CATEGORY;
-        //        request.suppNo = QmsConfig.SUPP_NO;
-        //        request.suppSecurity = QmsConfig.SUPP_SECURITY;
-        //        request.productName = QmsConfig.PRODUCT_NAME;
-        //        request.infoCategory = QmsConfig.INFO_CATEGORY;
-        //        request.batchNo = QmsConfig.BATCH_NO;
-        //        request.prodName = QmsConfig.PROCESS_NAME;
-        //        request.productPosition = QmsConfig.PRODUCT_POSITION;
-        //        request.sendTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            for (int i = 0; i < requests.Length; i++)
+            {
+                var request = requests[i];
 
-        //        var response = SendRequest<ProdInfoRequest>(QmsConfig.PROD_INFO_URL, request);
+                // 补充固定字段
+                request.requestNo = GenerateRequestNo();
+                request.productCategory = QmsConfig.PRODUCT_CATEGORY;
+                request.suppNo = QmsConfig.SUPP_NO;
+                request.suppSecurity = QmsConfig.SUPP_SECURITY;
+                request.productName = QmsConfig.PRODUCT_NAME;
+                request.infoCategory = QmsConfig.INFO_CATEGORY;
+                request.batchNo = QmsConfig.BATCH_NO;
+                request.prodName = QmsConfig.PROCESS_NAME;
+                request.productPosition = QmsConfig.PRODUCT_POSITION;
+                request.sendTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-        //        if (response.IsSuccess)
-        //            successCount++;
-        //        else
-        //            failCount++;
-        //    }
+                // 发送请求
+                var response = SendRequest<ProdInfoRequest>(QmsConfig.PROD_INFO_URL, request);
 
-        //    return (successCount, failCount);
-        //}
+                // 统计结果
+                if (response.IsSuccess)
+                    result.SuccessCount++;
+                else
+                    result.FailCount++;
+
+                // 回调进度
+                if (progressCallback != null)
+                    progressCallback(i + 1, requests.Length, response);
+
+                // 延迟（最后一个请求不需要延迟）
+                if (i < requests.Length - 1 && delayMilliseconds > 0)
+                {
+                    System.Threading.Thread.Sleep(delayMilliseconds);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 批量发送生产参数（异步）
+        /// </summary>
+        public static async Task<BatchSendResult> SendProdInfoBatchAsync(ProdInfoRequest[] requests)
+        {
+            return await Task.Run(() => SendProdInfoBatch(requests));
+        }
 
         #endregion
 
@@ -272,8 +299,16 @@ namespace QMSCientForm.QMS
             lock (lockObj)
             {
                 // 格式：供应商编码+年月日时分秒+3位随机数
-                string timestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
-                return $"{QmsConfig.SUPP_NO}{timestamp}";
+                string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+
+                // 序号自增，超过99999后重置
+                sequenceNumber++;
+                if (sequenceNumber > 99999)
+                    sequenceNumber = 1;
+
+                string sequence = sequenceNumber.ToString().PadLeft(5, '0');
+
+                return $"{QmsConfig.SUPP_NO}{timestamp}{sequence}";
             }
         }
 

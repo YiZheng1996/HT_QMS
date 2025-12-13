@@ -120,6 +120,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QMS\Models\BatchSendResult.cs" />
     <Compile Include="QMS\Models\DeviceInfoRequest.cs" />
     <Compile Include="QMS\Models\ProdInfoRequest.cs" />
     <Compile Include="QMS\Models\QmsResponse.cs" />
