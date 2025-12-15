@@ -160,6 +160,9 @@
     <EmbeddedResource Include="TestDetailQueryForm.resx">
       <DependentUpon>TestDetailQueryForm.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="UploadProgressForm.resx">
+      <DependentUpon>UploadProgressForm.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

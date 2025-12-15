@@ -300,7 +300,9 @@ namespace QMSCientForm
 
                 // 准备请求列表和记录ID列表
                 var requestList = new List<DeviceInfoRequest>();
-                var recordIdList = new List<int>(); // 添加这个列表
+
+                // DeviceRecord表记录Id列表，修改接口调用信息
+                var recordIdList = new List<int>();
 
                 foreach (var row in selectedRows)
                 {
@@ -315,7 +317,7 @@ namespace QMSCientForm
                         deviceStatus = record.type,
                         deviceStatusCtime = record.create_time.ToString("yyyy-MM-dd HH:mm:ss"),
                         deviceVld = GetDeviceCheckdate(record.deviceno),
-                        remark = ""
+                        remark = "" // 数据表内无备注字段
                     };
 
                     requestList.Add(request);

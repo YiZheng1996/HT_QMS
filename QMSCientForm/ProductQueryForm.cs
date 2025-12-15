@@ -7,6 +7,7 @@ using QMSCientForm.DAL;
 using QMSCientForm.Model;
 using QMSCientForm.QMS;
 using QMSCientForm.QMS.Models;
+using System.Runtime.InteropServices;
 
 namespace QMSCientForm
 {
@@ -15,6 +16,39 @@ namespace QMSCientForm
     /// </summary>
     public partial class ProductQueryForm : Form
     {
+        #region Win32 API，禁用关闭按钮
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
+
+        [DllImport("user32.dll")]
+        private static extern bool EnableMenuItem(IntPtr hMenu, uint uIDEnableItem, uint uEnable);
+
+        private const uint MF_BYCOMMAND = 0x00000000;
+        private const uint MF_GRAYED = 0x00000001;
+        private const uint MF_ENABLED = 0x00000000;
+        private const uint SC_CLOSE = 0xF060;
+
+        // 禁用关闭按钮
+        private void DisableCloseButton()
+        {
+            IntPtr hMenu = GetSystemMenu(this.Handle, false);
+            if (hMenu != IntPtr.Zero)
+            {
+                EnableMenuItem(hMenu, SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);
+            }
+        }
+
+        // 启用关闭按钮
+        private void EnableCloseButton()
+        {
+            IntPtr hMenu = GetSystemMenu(this.Handle, false);
+            if (hMenu != IntPtr.Zero)
+            {
+                EnableMenuItem(hMenu, SC_CLOSE, MF_BYCOMMAND | MF_ENABLED);
+            }
+        }
+        #endregion
+
         private ProductInfoDAL productDAL = new ProductInfoDAL();
         private ProjectInfoDAL projectDAL = new ProjectInfoDAL();
         private TestDataDAL testDataDAL = new TestDataDAL();
@@ -22,7 +56,8 @@ namespace QMSCientForm
         public ProductQueryForm()
         {
             InitializeComponent();
-
+            // 加载项目下拉框
+            LoadProjects();
             // 添加表头全选 checkbox
             AddHeaderCheckBox();
         }
@@ -236,6 +271,9 @@ namespace QMSCientForm
 
                 // 准备批量发送的请求列表
                 var requestList = new List<ProdInfoRequest>();
+                // TestData表记录Id列表，修改接口调用信息
+                var recordIdList = new List<int>();
+                var testModelDAL = new TestModelDAL();
 
                 foreach (var row in selectedRows)
                 {
@@ -247,18 +285,21 @@ namespace QMSCientForm
 
                     foreach (var testData in testDataList)
                     {
+                        // 根据 spec + cell_name 查询 TestModel
+                        var testModel = testModelDAL.GetBySpecAndParaname(testData.spec, testData.cell_name);
                         var request = new ProdInfoRequest
                         {
                             projectNo = product.projectno,
                             productNo = product.mfgno,
-                            paraName = testData.cell_name,
-                            paraUnit = "kPa",
-                            standValue = "28-38",
+                            paraName = testModel.paraname,
+                            paraUnit = testModel.paraunit,
+                            standValue = $"{testModel.standmin}-{testModel.standmax}",
                             actualValue = testData.cell_value,
-                            remark = null
+                            remark = testModel.remark
                         };
 
                         requestList.Add(request);
+                        recordIdList.Add(testData.id);
                     }
                 }
 
@@ -277,20 +318,38 @@ namespace QMSCientForm
                     return;
                 }
 
-                // 禁用按钮,防止重复点击
+                // 禁用按钮和面板（实现模态效果）
                 btnSubmit.Enabled = false;
                 btnQuery.Enabled = false;
+                panelTop.Enabled = false;
+                dgvProducts.Enabled = false;
+                DisableCloseButton(); // 禁用关闭按钮
                 this.Cursor = Cursors.WaitCursor;
 
                 try
                 {
                     // 创建进度窗口
                     var progressForm = new UploadProgressForm(requestList.Count);
-                    progressForm.Show(this);
+                    progressForm.Owner = this; // 设置父窗体
+                    progressForm.Show();
 
                     // 创建进度报告器
                     var progress = new Progress<UploadProgressReport>(report =>
                     {
+
+                        // 更新数据库状态
+                        int testId = recordIdList[report.Current - 1];
+                        if (report.Response.IsSuccess)
+                        {
+                            testDataDAL.UpdateQmsStatus(testId, "1",
+                                DateTime.Now, report.Response.resultMsg);
+                        }
+                        else
+                        {
+                            testDataDAL.UpdateQmsStatus(testId, "2",
+                                DateTime.Now, report.Response.resultMsg);
+                        }
+
                         string status = report.Response.IsSuccess ?
                             "成功" : string.Format("失败: {0}", report.Response.resultMsg);
                         progressForm.UpdateProgress(report.Current, report.Total,
@@ -317,8 +376,12 @@ namespace QMSCientForm
                 }
                 finally
                 {
+                    // 恢复控件状态
                     btnSubmit.Enabled = true;
                     btnQuery.Enabled = true;
+                    panelTop.Enabled = true;
+                    dgvProducts.Enabled = true;
+                    EnableCloseButton(); // 启用关闭按钮
                     this.Cursor = Cursors.Default;
                 }
             }

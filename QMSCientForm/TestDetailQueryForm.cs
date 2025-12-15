@@ -49,8 +49,8 @@ namespace QMSCientForm
                     单位 = d.paraunit,
                     判定 = d.test_result,
                     同步状态 = GetQmsStatusText(d.qms_status),
-                    同步时间 = d.qms_time,
-                    同步信息 = d.qms_response
+                    同步时间 = GetQmsTimeDisplay(d.qms_status, d.qms_time),
+                    同步信息 = GetQmsResponseDisplay(d.qms_status, d.qms_response)
                 }).ToList();
 
                 // 绑定到DataGridView
@@ -62,12 +62,10 @@ namespace QMSCientForm
                     var result = row.Cells["判定"].Value?.ToString();
                     if (result == "不合格")
                     {
-                        //row.DefaultCellStyle.BackColor = Color.FromArgb(255, 200, 200);
                         row.DefaultCellStyle.BackColor = Color.Red;
                     }
                     else if (result == "合格")
                     {
-                        //row.DefaultCellStyle.BackColor = Color.FromArgb(200, 255, 200);
                         row.DefaultCellStyle.BackColor = Color.Green;
                     }
                 }
@@ -102,6 +100,47 @@ namespace QMSCientForm
                 case "2": return "同步失败";
                 default: return "未同步";
             }
+        }
+
+        /// <summary>
+        /// 获取QMS时间显示
+        /// </summary>
+        private string GetQmsTimeDisplay(string status, string qmsTime)
+        {
+            // 未同步或状态为空时显示 -
+            if (string.IsNullOrEmpty(status) || status == "0")
+            {
+                return "-";
+            }
+
+            // 已同步或同步失败时显示时间
+            if (!string.IsNullOrEmpty(qmsTime) && qmsTime != "0001-01-01 00:00:00")
+            {
+                return qmsTime;
+            }
+
+            return "-";
+        }
+
+        /// <summary>
+        /// 获取QMS响应信息显示
+        /// </summary>
+        private string GetQmsResponseDisplay(string status, string qmsResponse)
+        {
+            // 未同步时显示 -
+            if (string.IsNullOrEmpty(status) || status == "0")
+            {
+                return "-";
+            }
+
+            // 已同步或同步失败时显示响应信息
+            if (!string.IsNullOrEmpty(qmsResponse))
+            {
+                return qmsResponse;
+            }
+
+            // 有状态但无响应信息
+            return status == "1" ? "成功" : "无详细信息";
         }
         #endregion
     }

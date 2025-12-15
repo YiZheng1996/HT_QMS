@@ -116,6 +116,7 @@ namespace QMSCientForm
             this.Controls.Add(this.panelTop);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "TestDetailQueryForm";
+            this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "试验项点明细查询";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;

@@ -98,7 +98,12 @@ namespace QMSCientForm
         {
             if (btnCancel.Text == "关闭")
             {
-                this.DialogResult = DialogResult.OK;
+                // 恢复父窗体（如果需要）
+                if (this.Owner != null)
+                {
+                    this.Owner.Enabled = true;
+                    this.Owner.Focus();
+                }
                 this.Close();
                 return;
             }
@@ -112,7 +117,7 @@ namespace QMSCientForm
                 lblStatus.ForeColor = Color.Orange;
 
                 cancellationTokenSource.Cancel();
-                this.Close();
+                Close();
             }
         }
 

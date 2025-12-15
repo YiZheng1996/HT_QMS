@@ -21,12 +21,12 @@ namespace QMSCientForm.DAL
         }
 
         /// <summary>
-        /// 根据规格和参数名称获取配置
+        /// 根据规格和单元格名称获取配置
         /// </summary>
-        public TestModelModel GetBySpecAndParaname(string spec, string paraname)
+        public TestModelModel GetBySpecAndParaname(string spec, string cellName)
         {
             return freeSql.Select<TestModelModel>()
-                .Where(t => t.spec == spec && t.paraname == paraname)
+                .Where(t => t.spec == spec && t.cell_name == cellName)
                 .First();
         }
 
