@@ -218,7 +218,7 @@ namespace QMSCientForm
         /// <summary>
         /// 提交按钮点击事件 - 批量发送到QMS
         /// </summary>
-        private void btnSubmit_Click(object sender, EventArgs e)
+        private async void btnSubmit_Click(object sender, EventArgs e)
         {
             try
             {
@@ -242,7 +242,7 @@ namespace QMSCientForm
                     var product = row.DataBoundItem as ProductInfoModel;
                     if (product == null) continue;
 
-                    // 修改:使用 mfgno + spec 获取测试数据
+                    // 使用 mfgno + spec 获取测试数据
                     var testDataList = testDataDAL.GetLatestByMfgnoAndSpec(product.mfgno, product.spec);
 
                     foreach (var testData in testDataList)
@@ -284,63 +284,39 @@ namespace QMSCientForm
 
                 try
                 {
-                    // 创建进度窗口（可选）
-                    var progressForm = new Form
-                    {
-                        Text = "正在发送数据",
-                        Width = 400,
-                        Height = 120,
-                        FormBorderStyle = FormBorderStyle.FixedDialog,
-                        StartPosition = FormStartPosition.CenterParent,
-                        MaximizeBox = false,
-                        MinimizeBox = false
-                    };
-
-                    var lblProgress = new Label
-                    {
-                        Text = "准备发送...",
-                        AutoSize = false,
-                        Width = 360,
-                        Height = 40,
-                        Left = 20,
-                        Top = 20,
-                        TextAlign = ContentAlignment.MiddleLeft
-                    };
-                    progressForm.Controls.Add(lblProgress);
-
-                    // 异步显示进度窗口
+                    // 创建进度窗口
+                    var progressForm = new UploadProgressForm(requestList.Count);
                     progressForm.Show(this);
-                    Application.DoEvents();
 
-                    // 批量发送（带进度回调）
-                    var result = QmsApiClient.SendProdInfoBatch(
+                    // 创建进度报告器
+                    var progress = new Progress<UploadProgressReport>(report =>
+                    {
+                        string status = report.Response.IsSuccess ?
+                            "成功" : string.Format("失败: {0}", report.Response.resultMsg);
+                        progressForm.UpdateProgress(report.Current, report.Total,
+                            status, report.Response.IsSuccess);
+                    });
+
+                    // 批量发送
+                    var result = await QmsApiClient.SendProdInfoBatchAsync(
                         requestList.ToArray(),
-                        delayMilliseconds: 200, // 每次请求间隔200ms
-                        progressCallback: (current, total, response) =>
-                        {
-                            // 更新进度
-                            lblProgress.Text = $"正在发送：{current}/{total}\n" +
-                                                      $"当前结果：{(response.IsSuccess ? "成功" : response.resultMsg)}";
-                            Application.DoEvents(); // 刷新界面
-                        }
+                        delayMilliseconds: 200,
+                        progress: progress,
+                        cancellationToken: progressForm.CancellationToken
                     );
 
-                    // 关闭进度窗口
-                    progressForm.Close();
-
-                    // 显示结果
-                    string message = $"发送完成！\n\n" +
-                                   $"总数量：{result.TotalCount}\n" +
-                                   $"成功：{result.SuccessCount}\n" +
-                                   $"失败：{result.FailCount}";
-
-                    MessageBox.Show(message, "发送结果",
-                        MessageBoxButtons.OK,
-                        result.IsAllSuccess ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+                    // 设置完成状态
+                    if (progressForm.IsCancelled)
+                    {
+                        progressForm.SetCancelled(result.TotalCount, requestList.Count);
+                    }
+                    else
+                    {
+                        progressForm.SetCompleted(result.SuccessCount, result.FailCount);
+                    }
                 }
                 finally
                 {
-                    // 恢复按钮状态
                     btnSubmit.Enabled = true;
                     btnQuery.Enabled = true;
                     this.Cursor = Cursors.Default;

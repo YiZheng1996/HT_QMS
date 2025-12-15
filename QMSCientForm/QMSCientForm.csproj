@@ -124,6 +124,7 @@
     <Compile Include="QMS\Models\DeviceInfoRequest.cs" />
     <Compile Include="QMS\Models\ProdInfoRequest.cs" />
     <Compile Include="QMS\Models\QmsResponse.cs" />
+    <Compile Include="QMS\Models\UploadProgressReport.cs" />
     <Compile Include="QMS\QmsApiClient.cs" />
     <Compile Include="QMS\QmsConfig.cs" />
     <Compile Include="TestDetailQueryForm.cs">
@@ -131,6 +132,12 @@
     </Compile>
     <Compile Include="TestDetailQueryForm.Designer.cs">
       <DependentUpon>TestDetailQueryForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UploadProgressForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UploadProgressForm.Designer.cs">
+      <DependentUpon>UploadProgressForm.cs</DependentUpon>
     </Compile>
     <EmbeddedResource Include="DeviceQueryForm.resx">
       <DependentUpon>DeviceQueryForm.cs</DependentUpon>

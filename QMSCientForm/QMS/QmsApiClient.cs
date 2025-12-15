@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using QMSCientForm.QMS.Models;
+using System.Threading;
 
 namespace QMSCientForm.QMS
 {
@@ -39,15 +40,10 @@ namespace QMSCientForm.QMS
         #region 设备信息接口
 
         /// <summary>
-        /// 发送设备信息
+        /// 异步发送设备信息
         /// </summary>
-        /// <param name="deviceStatus">设备状态（正常开机、正常关机、发生故障、故障恢复）</param>
-        /// <param name="deviceStatusCtime">设备状态改变时间</param>
-        /// <param name="deviceVld">检定有效期</param>
-        /// <param name="remark">备注</param>
-        /// <returns></returns>
-        public static QmsResponse SendDeviceInfo(string deviceStatus, DateTime deviceStatusCtime,
-            string deviceVld = null, string remark = null)
+        public static async Task<QmsResponse> SendDeviceInfoAsync(string deviceStatus,
+            DateTime deviceStatusCtime, string deviceVld = null, string remark = null)
         {
             // 构建请求对象
             var request = new DeviceInfoRequest
@@ -67,16 +63,7 @@ namespace QMSCientForm.QMS
                 remark = remark
             };
 
-            return SendRequest<DeviceInfoRequest>(QmsConfig.DEVICE_INFO_URL, request);
-        }
-
-        /// <summary>
-        /// 异步发送设备信息
-        /// </summary>
-        public static async Task<QmsResponse> SendDeviceInfoAsync(string deviceStatus,
-            DateTime deviceStatusCtime, string deviceVld = null, string remark = null)
-        {
-            return await Task.Run(() => SendDeviceInfo(deviceStatus, deviceStatusCtime, deviceVld, remark));
+            return await SendRequestAsync(QmsConfig.DEVICE_INFO_URL, request);
         }
 
         #endregion
@@ -84,17 +71,9 @@ namespace QMSCientForm.QMS
         #region 生产参数接口
 
         /// <summary>
-        /// 发送生产参数
+        /// 异步发送生产参数
         /// </summary>
-        /// <param name="projectNo">项目编号</param>
-        /// <param name="productNo">生产编号</param>
-        /// <param name="paraName">参数名称</param>
-        /// <param name="paraUnit">参数单位</param>
-        /// <param name="standValue">标准值（如"28-38"）</param>
-        /// <param name="actualValue">实测值</param>
-        /// <param name="remark">备注</param>
-        /// <returns></returns>
-        public static QmsResponse SendProdInfo(string projectNo, string productNo,
+        public static async Task<QmsResponse> SendProdInfoAsync(string projectNo, string productNo,
             string paraName, string paraUnit, string standValue, string actualValue,
             string remark = null)
         {
@@ -120,36 +99,28 @@ namespace QMSCientForm.QMS
                 remark = remark
             };
 
-            return SendRequest<ProdInfoRequest>(QmsConfig.PROD_INFO_URL, request);
+            return await SendRequestAsync(QmsConfig.PROD_INFO_URL, request);
         }
 
         /// <summary>
-        /// 异步发送生产参数
+        /// 批量异步发送生产参数（带延迟、进度和取消支持）
         /// </summary>
-        public static async Task<QmsResponse> SendProdInfoAsync(string projectNo, string productNo,
-            string paraName, string paraUnit, string standValue, string actualValue,
-            string remark = null)
-        {
-            return await Task.Run(() => SendProdInfo(projectNo, productNo, paraName,
-                paraUnit, standValue, actualValue, remark));
-        }
-
-        /// <summary>
-        /// 批量发送生产参数（带延迟和进度）
-        /// </summary>
-        /// <param name="requests">生产参数列表</param>
-        /// <param name="delayMilliseconds">每次请求之间的延迟（毫秒），默认200ms</param>
-        /// <param name="progressCallback">进度回调 (当前索引, 总数, 当前结果)</param>
-        /// <returns>批量发送结果</returns>
-        public static BatchSendResult SendProdInfoBatch(
+        public static async Task<BatchSendResult> SendProdInfoBatchAsync(
             ProdInfoRequest[] requests,
             int delayMilliseconds = 200,
-            Action<int, int, QmsResponse> progressCallback = null)
+            IProgress<UploadProgressReport> progress = null,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             var result = new BatchSendResult();
 
             for (int i = 0; i < requests.Length; i++)
             {
+                // 检查是否取消
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 var request = requests[i];
 
                 // 补充固定字段
@@ -164,8 +135,9 @@ namespace QMSCientForm.QMS
                 request.productPosition = QmsConfig.PRODUCT_POSITION;
                 request.sendTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-                // 发送请求
-                var response = SendRequest<ProdInfoRequest>(QmsConfig.PROD_INFO_URL, request);
+                // 异步发送请求
+                var response = await SendRequestAsync<ProdInfoRequest>(
+                    QmsConfig.PROD_INFO_URL, request);
 
                 // 统计结果
                 if (response.IsSuccess)
@@ -173,14 +145,16 @@ namespace QMSCientForm.QMS
                 else
                     result.FailCount++;
 
-                // 回调进度
-                if (progressCallback != null)
-                    progressCallback(i + 1, requests.Length, response);
+                // 报告进度
+                if (progress != null)
+                {
+                    progress.Report(new UploadProgressReport(i + 1, requests.Length, response));
+                }
 
                 // 延迟（最后一个请求不需要延迟）
                 if (i < requests.Length - 1 && delayMilliseconds > 0)
                 {
-                    System.Threading.Thread.Sleep(delayMilliseconds);
+                    await Task.Delay(delayMilliseconds, cancellationToken);
                 }
             }
 
@@ -188,11 +162,60 @@ namespace QMSCientForm.QMS
         }
 
         /// <summary>
-        /// 批量发送生产参数（异步）
+        /// 批量异步发送设备信息（带延迟、进度和取消支持）
         /// </summary>
-        public static async Task<BatchSendResult> SendProdInfoBatchAsync(ProdInfoRequest[] requests)
+        public static async Task<BatchSendResult> SendDeviceInfoBatchAsync(
+            DeviceInfoRequest[] requests,
+            int delayMilliseconds = 200,
+            IProgress<UploadProgressReport> progress = null,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await Task.Run(() => SendProdInfoBatch(requests));
+            var result = new BatchSendResult();
+
+            for (int i = 0; i < requests.Length; i++)
+            {
+                // 检查是否取消
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                var request = requests[i];
+
+                // 补充固定字段
+                request.requestNo = GenerateRequestNo();
+                request.productCategory = QmsConfig.PRODUCT_CATEGORY;
+                request.suppNo = QmsConfig.SUPP_NO;
+                request.suppSecurity = QmsConfig.SUPP_SECURITY;
+                request.productName = QmsConfig.PRODUCT_NAME;
+                request.processName = QmsConfig.PROCESS_NAME;
+                request.deviceName = QmsConfig.DEVICE_NAME;
+                request.sendTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+                // 异步发送请求
+                var response = await SendRequestAsync<DeviceInfoRequest>(
+                    QmsConfig.DEVICE_INFO_URL, request);
+
+                // 统计结果
+                if (response.IsSuccess)
+                    result.SuccessCount++;
+                else
+                    result.FailCount++;
+
+                // 报告进度
+                if (progress != null)
+                {
+                    progress.Report(new UploadProgressReport(i + 1, requests.Length, response));
+                }
+
+                // 延迟
+                if (i < requests.Length - 1 && delayMilliseconds > 0)
+                {
+                    await Task.Delay(delayMilliseconds, cancellationToken);
+                }
+            }
+
+            return result;
         }
 
         #endregion
@@ -200,9 +223,9 @@ namespace QMSCientForm.QMS
         #region 通用发送方法
 
         /// <summary>
-        /// 发送请求（带重试机制）
+        /// 异步发送请求（带重试机制）
         /// </summary>
-        private static QmsResponse SendRequest<T>(string url, T request)
+        private static async Task<QmsResponse> SendRequestAsync<T>(string url, T request)
         {
             int retryCount = 0;
             Exception lastException = null;
@@ -217,12 +240,12 @@ namespace QMSCientForm.QMS
                     // 记录日志
                     LogRequest(url, jsonContent);
 
-                    // 发送HTTP POST请求
+                    // 发送HTTP POST请求（真正的异步）
                     var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-                    var httpResponse = httpClient.PostAsync(url, content).Result;
+                    var httpResponse = await httpClient.PostAsync(url, content); // ← 用 await
 
-                    // 读取响应
-                    string responseContent = httpResponse.Content.ReadAsStringAsync().Result;
+                    // 读取响应（真正的异步）
+                    string responseContent = await httpResponse.Content.ReadAsStringAsync(); // ← 用 await
 
                     // 记录日志
                     LogResponse(url, responseContent);
@@ -248,7 +271,7 @@ namespace QMSCientForm.QMS
                     // 如果失败且还有重试次数，继续重试
                     if (retryCount < QmsConfig.MAX_RETRY_COUNT)
                     {
-                        System.Threading.Thread.Sleep(QmsConfig.RETRY_INTERVAL);
+                        await Task.Delay(QmsConfig.RETRY_INTERVAL); // ← 用 await Task.Delay 代替 Thread.Sleep
                         retryCount++;
                         continue;
                     }
@@ -265,7 +288,7 @@ namespace QMSCientForm.QMS
                     // 如果还有重试次数，继续重试
                     if (retryCount < QmsConfig.MAX_RETRY_COUNT)
                     {
-                        System.Threading.Thread.Sleep(QmsConfig.RETRY_INTERVAL);
+                        await Task.Delay(QmsConfig.RETRY_INTERVAL);
                         retryCount++;
                         continue;
                     }
@@ -323,7 +346,7 @@ namespace QMSCientForm.QMS
                 System.Diagnostics.Debug.WriteLine(logMessage);
 
                 // 可选：写入日志文件
-                // System.IO.File.AppendAllText("QmsApi.log", logMessage);
+                System.IO.File.AppendAllText("QmsApi.log", logMessage);
             }
             catch { }
         }
@@ -355,7 +378,7 @@ namespace QMSCientForm.QMS
                 System.Diagnostics.Debug.WriteLine(logMessage);
 
                 // 可选：写入日志文件
-                // System.IO.File.AppendAllText("QmsApi.log", logMessage);
+                System.IO.File.AppendAllText("QmsApi.log", logMessage);
             }
             catch { }
         }

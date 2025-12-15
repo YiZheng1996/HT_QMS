@@ -20,6 +20,7 @@ namespace QMSCientForm
         public DeviceQueryForm()
         {
             InitializeComponent();
+            LoadDevices();
             dtpStartDate.Value = dtpStartDate.Value.Date.AddDays(-30); // 默认查询一个月的数据
             AddHeaderCheckBox();
         }
@@ -271,9 +272,9 @@ namespace QMSCientForm
         }
 
         /// <summary>
-        /// 提交按钮点击事件 - 发送到QMS
+        /// 提交按钮点击事件 - 异步发送到QMS
         /// </summary>
-        private void btnSubmit_Click(object sender, EventArgs e)
+        private async void btnSubmit_Click(object sender, EventArgs e)
         {
             try
             {
@@ -295,42 +296,57 @@ namespace QMSCientForm
                     return;
                 }
 
-                int successCount = 0;
-                int failCount = 0;
+                // 禁用按钮，防止重复点击
+                btnSubmit.Enabled = false;
+                btnQuery.Enabled = false;
+                this.Cursor = Cursors.WaitCursor;
 
-                foreach (var row in selectedRows)
+                try
                 {
-                    int recordId = Convert.ToInt32(row.Cells["RecordId"].Value);
-                    var record = recordDAL.GetById(recordId);
-                    if (record == null) continue;
+                    int successCount = 0;
+                    int failCount = 0;
 
-                    // 发送到QMS
-                    var response = QmsApiClient.SendDeviceInfo(
-                        deviceStatus: record.type,
-                        deviceStatusCtime: record.create_time,
-                        deviceVld: GetDeviceCheckdate(record.deviceno),
-                        remark: ""
-                    );
+                    foreach (var row in selectedRows)
+                    {
+                        int recordId = Convert.ToInt32(row.Cells["RecordId"].Value);
+                        var record = recordDAL.GetById(recordId);
+                        if (record == null) continue;
 
-                    if (response.IsSuccess)
-                    {
-                        recordDAL.UpdateQmsStatus(record.id, "1",
-                            DateTime.Now, response.resultMsg);
-                        successCount++;
+                        // 异步发送到QMS
+                        var response = await QmsApiClient.SendDeviceInfoAsync(
+                            deviceStatus: record.type,
+                            deviceStatusCtime: record.create_time,
+                            deviceVld: GetDeviceCheckdate(record.deviceno),
+                            remark: ""
+                        );
+
+                        if (response.IsSuccess)
+                        {
+                            recordDAL.UpdateQmsStatus(record.id, "1",
+                                DateTime.Now, response.resultMsg);
+                            successCount++;
+                        }
+                        else
+                        {
+                            recordDAL.UpdateQmsStatus(record.id, "2",
+                                DateTime.Now, response.resultMsg);
+                            failCount++;
+                        }
                     }
-                    else
-                    {
-                        recordDAL.UpdateQmsStatus(record.id, "2",
-                            DateTime.Now, response.resultMsg);
-                        failCount++;
-                    }
+
+                    MessageBox.Show($"发送完成！\n成功：{successCount} 条\n失败：{failCount} 条",
+                        "完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    // 刷新数据
+                    btnQuery_Click(null, null);
                 }
-
-                MessageBox.Show($"发送完成！\n成功：{successCount} 条\n失败：{failCount} 条",
-                    "完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                // 刷新数据
-                btnQuery_Click(null, null);
+                finally
+                {
+                    // 恢复按钮状态
+                    btnSubmit.Enabled = true;
+                    btnQuery.Enabled = true;
+                    this.Cursor = Cursors.Default;
+                }
             }
             catch (Exception ex)
             {
@@ -340,12 +356,35 @@ namespace QMSCientForm
         }
 
         /// <summary>
-        /// 获取设备检定日期
+        /// 获取设备检定日期（确保格式为 yyyy-MM-dd HH:mm:ss）
         /// </summary>
         private string GetDeviceCheckdate(string deviceNo)
         {
             var device = deviceDAL.GetByDeviceNo(deviceNo);
-            return device?.checkdate ?? "";
+
+            if (device == null || string.IsNullOrWhiteSpace(device.checkdate))
+            {
+                System.Diagnostics.Debug.WriteLine($"设备 {deviceNo} 无检定日期");
+                return "";
+            }
+
+            try
+            {
+                // 尝试解析日期字符串
+                DateTime checkDate = DateTime.Parse(device.checkdate);
+
+                // 统一格式化为 yyyy-MM-dd HH:mm:ss
+                string formattedDate = checkDate.ToString("yyyy-MM-dd HH:mm:ss");
+                System.Diagnostics.Debug.WriteLine($"设备 {deviceNo} 检定日期: {device.checkdate} -> {formattedDate}");
+
+                return formattedDate;
+            }
+            catch (Exception ex)
+            {
+                // 记录错误但不影响主流程
+                System.Diagnostics.Debug.WriteLine($"设备 {deviceNo} 日期格式错误: {device.checkdate}, 错误: {ex.Message}");
+                return "";
+            }
         }
     }
 }

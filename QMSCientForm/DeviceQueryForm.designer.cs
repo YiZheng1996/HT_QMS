@@ -198,7 +198,7 @@ namespace QMSCientForm
             this.dgvRecords.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dgvRecords.Location = new System.Drawing.Point(0, 80);
             this.dgvRecords.Name = "dgvRecords";
-            this.dgvRecords.ReadOnly = true;
+            this.dgvRecords.ReadOnly = false;
             this.dgvRecords.RowHeadersVisible = false;
             this.dgvRecords.RowTemplate.Height = 30;
             this.dgvRecords.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
