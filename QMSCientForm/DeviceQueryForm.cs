@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using QMSCientForm.DAL;
 using QMSCientForm.Model;
 using QMSCientForm.QMS;
+using QMSCientForm.QMS.Models;
 
 namespace QMSCientForm
 {
@@ -272,7 +273,7 @@ namespace QMSCientForm
         }
 
         /// <summary>
-        /// 提交按钮点击事件 - 异步发送到QMS
+        /// 提交按钮点击事件 - 发送到QMS（带进度和取消）
         /// </summary>
         private async void btnSubmit_Click(object sender, EventArgs e)
         {
@@ -290,59 +291,101 @@ namespace QMSCientForm
                     return;
                 }
 
-                if (MessageBox.Show($"确定要发送选中的 {selectedRows.Count} 条设备记录到QMS吗？",
+                if (MessageBox.Show(
+                    string.Format("确定要发送选中的 {0} 条设备记录到QMS吗？", selectedRows.Count),
                     "确认", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
                 {
                     return;
                 }
 
-                // 禁用按钮，防止重复点击
+                // 准备请求列表和记录ID列表
+                var requestList = new List<DeviceInfoRequest>();
+                var recordIdList = new List<int>(); // 添加这个列表
+
+                foreach (var row in selectedRows)
+                {
+                    int recordId = Convert.ToInt32(row.Cells["RecordId"].Value);
+                    var record = recordDAL.GetById(recordId);
+                    if (record == null) continue;
+
+                    // 添加请求对象
+                    var request = new DeviceInfoRequest
+                    {
+                        deviceNo = record.deviceno,
+                        deviceStatus = record.type,
+                        deviceStatusCtime = record.create_time.ToString("yyyy-MM-dd HH:mm:ss"),
+                        deviceVld = GetDeviceCheckdate(record.deviceno),
+                        remark = ""
+                    };
+
+                    requestList.Add(request);
+                    recordIdList.Add(recordId); // 添加记录ID到列表
+                }
+
+                if (requestList.Count == 0)
+                {
+                    MessageBox.Show("没有可发送的数据", "提示",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                // 禁用按钮
                 btnSubmit.Enabled = false;
                 btnQuery.Enabled = false;
                 this.Cursor = Cursors.WaitCursor;
 
                 try
                 {
-                    int successCount = 0;
-                    int failCount = 0;
+                    // 创建进度窗口
+                    var progressForm = new UploadProgressForm(requestList.Count);
+                    progressForm.Show(this);
 
-                    foreach (var row in selectedRows)
+                    // 创建进度报告器
+                    var progress = new Progress<UploadProgressReport>(report =>
                     {
-                        int recordId = Convert.ToInt32(row.Cells["RecordId"].Value);
-                        var record = recordDAL.GetById(recordId);
-                        if (record == null) continue;
-
-                        // 异步发送到QMS
-                        var response = await QmsApiClient.SendDeviceInfoAsync(
-                            deviceStatus: record.type,
-                            deviceStatusCtime: record.create_time,
-                            deviceVld: GetDeviceCheckdate(record.deviceno),
-                            remark: ""
-                        );
-
-                        if (response.IsSuccess)
+                        // 更新数据库状态
+                        int recordId = recordIdList[report.Current - 1];
+                        if (report.Response.IsSuccess)
                         {
-                            recordDAL.UpdateQmsStatus(record.id, "1",
-                                DateTime.Now, response.resultMsg);
-                            successCount++;
+                            recordDAL.UpdateQmsStatus(recordId, "1",
+                                DateTime.Now, report.Response.resultMsg);
                         }
                         else
                         {
-                            recordDAL.UpdateQmsStatus(record.id, "2",
-                                DateTime.Now, response.resultMsg);
-                            failCount++;
+                            recordDAL.UpdateQmsStatus(recordId, "2",
+                                DateTime.Now, report.Response.resultMsg);
                         }
-                    }
 
-                    MessageBox.Show($"发送完成！\n成功：{successCount} 条\n失败：{failCount} 条",
-                        "完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        // 更新进度窗口
+                        string status = report.Response.IsSuccess ?
+                            "成功" : string.Format("失败: {0}", report.Response.resultMsg);
+                        progressForm.UpdateProgress(report.Current, report.Total,
+                            status, report.Response.IsSuccess);
+                    });
+
+                    // 批量发送
+                    var result = await QmsApiClient.SendDeviceInfoBatchAsync(
+                        requestList.ToArray(),
+                        delayMilliseconds: 200,
+                        progress: progress,
+                        cancellationToken: progressForm.CancellationToken
+                    );
+
+                    // 设置完成状态
+                    if (progressForm.IsCancelled)
+                    {
+                        progressForm.SetCancelled(result.TotalCount, requestList.Count);
+                    }
+                    else
+                    {
+                        progressForm.SetCompleted(result.SuccessCount, result.FailCount);
+                    }
 
                     // 刷新数据
                     btnQuery_Click(null, null);
                 }
                 finally
                 {
-                    // 恢复按钮状态
                     btnSubmit.Enabled = true;
                     btnQuery.Enabled = true;
                     this.Cursor = Cursors.Default;
@@ -350,7 +393,7 @@ namespace QMSCientForm
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"发送失败：{ex.Message}", "错误",
+                MessageBox.Show(string.Format("发送失败：{0}", ex.Message), "错误",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
