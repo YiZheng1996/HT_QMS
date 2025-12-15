@@ -22,7 +22,6 @@ namespace QMSCientForm
         public ProductQueryForm()
         {
             InitializeComponent();
-            LoadProjects();
 
             // 添加表头全选 checkbox
             AddHeaderCheckBox();
@@ -47,25 +46,51 @@ namespace QMSCientForm
                 {
                     row.Cells["colSelect"].Value = headerCheckBox.Checked;
                 }
-                Refresh();
+                dgvProducts.Refresh();
             };
 
             // 将 checkbox 添加到表头
             dgvProducts.Controls.Add(headerCheckBox);
 
-            // 调整位置到第一列表头中央
+            // 自定义绘制表头
+            dgvProducts.Paint += (sender, e) =>
+            {
+                // 获取第一列（checkbox列）的表头位置
+                Rectangle rect = dgvProducts.GetCellDisplayRectangle(0, -1, true);
+
+                // 计算checkbox位置（靠左）
+                Point checkBoxLocation = new Point(
+                    rect.Location.X + 45,  // 左边距5像素
+                    rect.Location.Y + (rect.Height - headerCheckBox.Height) / 2 + 1
+                );
+
+                headerCheckBox.Location = checkBoxLocation;
+                headerCheckBox.BringToFront(); // 确保checkbox在最前面
+            };
+
+            // 自定义绘制表头内容（绘制"全选"文字）
             dgvProducts.CellPainting += (sender, e) =>
             {
                 if (e.RowIndex == -1 && e.ColumnIndex == 0)
                 {
-                    Rectangle rect = e.CellBounds;
-                    Point checkBoxLocation = new Point(
-                        rect.Location.X + (rect.Width - headerCheckBox.Width) / 2,
-                        rect.Location.Y + (rect.Height - headerCheckBox.Height) / 2
+                    e.PaintBackground(e.CellBounds, true);
+
+                    // 在checkbox右侧绘制"全选"文字
+                    TextRenderer.DrawText(
+                        e.Graphics,
+                        "全选",
+                        dgvProducts.Font,
+                        new Point(e.CellBounds.X + 15, e.CellBounds.Y + 5),  // checkbox宽度约20，所以从25开始
+                        dgvProducts.ColumnHeadersDefaultCellStyle.ForeColor
                     );
-                    headerCheckBox.Location = checkBoxLocation;
+
+                    e.Handled = true;
                 }
             };
+
+            // 初始化checkbox位置
+            dgvProducts.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
+            dgvProducts.ColumnHeadersHeight = 23; // 设置表头高度
         }
 
         /// <summary>

@@ -34,7 +34,7 @@ namespace QMSCientForm
         {
             try
             {
-                // 修改:使用 mfgno + spec 获取产品测试详情
+                // 使用 mfgno + spec 获取产品测试详情
                 var details = joinDAL.GetProductTestDetail(product.mfgno, product.spec);
 
                 // 创建用于显示的列表

@@ -57,7 +57,7 @@ namespace QMSCientForm
             this.panelTop.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelTop.Location = new System.Drawing.Point(0, 0);
             this.panelTop.Name = "panelTop";
-            this.panelTop.Size = new System.Drawing.Size(1200, 80);
+            this.panelTop.Size = new System.Drawing.Size(1352, 80);
             this.panelTop.TabIndex = 0;
             // 
             // btnSubmit
@@ -66,9 +66,9 @@ namespace QMSCientForm
             this.btnSubmit.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnSubmit.Font = new System.Drawing.Font("微软雅黑", 10F, System.Drawing.FontStyle.Bold);
             this.btnSubmit.ForeColor = System.Drawing.Color.White;
-            this.btnSubmit.Location = new System.Drawing.Point(1070, 45);
+            this.btnSubmit.Location = new System.Drawing.Point(1201, 20);
             this.btnSubmit.Name = "btnSubmit";
-            this.btnSubmit.Size = new System.Drawing.Size(100, 30);
+            this.btnSubmit.Size = new System.Drawing.Size(100, 35);
             this.btnSubmit.TabIndex = 9;
             this.btnSubmit.Text = "提交";
             this.btnSubmit.UseVisualStyleBackColor = false;
@@ -80,9 +80,9 @@ namespace QMSCientForm
             this.btnQuery.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnQuery.Font = new System.Drawing.Font("微软雅黑", 10F, System.Drawing.FontStyle.Bold);
             this.btnQuery.ForeColor = System.Drawing.Color.White;
-            this.btnQuery.Location = new System.Drawing.Point(1070, 10);
+            this.btnQuery.Location = new System.Drawing.Point(1078, 20);
             this.btnQuery.Name = "btnQuery";
-            this.btnQuery.Size = new System.Drawing.Size(100, 30);
+            this.btnQuery.Size = new System.Drawing.Size(100, 35);
             this.btnQuery.TabIndex = 8;
             this.btnQuery.Text = "查询";
             this.btnQuery.UseVisualStyleBackColor = false;
@@ -148,6 +148,7 @@ namespace QMSCientForm
             // 
             // cmbDeviceNo
             // 
+            this.cmbDeviceNo.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbDeviceNo.Font = new System.Drawing.Font("微软雅黑", 10F);
             this.cmbDeviceNo.FormattingEnabled = true;
             this.cmbDeviceNo.Location = new System.Drawing.Point(105, 27);
@@ -170,9 +171,9 @@ namespace QMSCientForm
             this.panelBottom.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(240)))), ((int)(((byte)(240)))));
             this.panelBottom.Controls.Add(this.lblCount);
             this.panelBottom.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panelBottom.Location = new System.Drawing.Point(0, 550);
+            this.panelBottom.Location = new System.Drawing.Point(0, 596);
             this.panelBottom.Name = "panelBottom";
-            this.panelBottom.Size = new System.Drawing.Size(1200, 40);
+            this.panelBottom.Size = new System.Drawing.Size(1352, 40);
             this.panelBottom.TabIndex = 2;
             // 
             // lblCount
@@ -197,10 +198,11 @@ namespace QMSCientForm
             this.dgvRecords.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dgvRecords.Location = new System.Drawing.Point(0, 80);
             this.dgvRecords.Name = "dgvRecords";
+            this.dgvRecords.ReadOnly = true;
             this.dgvRecords.RowHeadersVisible = false;
             this.dgvRecords.RowTemplate.Height = 30;
             this.dgvRecords.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvRecords.Size = new System.Drawing.Size(1200, 470);
+            this.dgvRecords.Size = new System.Drawing.Size(1352, 516);
             this.dgvRecords.TabIndex = 1;
             // 
             // colSelect
@@ -208,13 +210,14 @@ namespace QMSCientForm
             this.colSelect.FillWeight = 30F;
             this.colSelect.HeaderText = "";
             this.colSelect.Name = "colSelect";
+            this.colSelect.ReadOnly = true;
             this.colSelect.Resizable = System.Windows.Forms.DataGridViewTriState.False;
             // 
             // DeviceQueryForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1200, 590);
+            this.ClientSize = new System.Drawing.Size(1352, 636);
             this.Controls.Add(this.dgvRecords);
             this.Controls.Add(this.panelBottom);
             this.Controls.Add(this.panelTop);
@@ -222,6 +225,7 @@ namespace QMSCientForm
             this.Name = "DeviceQueryForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "设备信息查询发送";
+            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.panelTop.ResumeLayout(false);
             this.panelTop.PerformLayout();
             this.panelBottom.ResumeLayout(false);
@@ -245,8 +249,8 @@ namespace QMSCientForm
         private System.Windows.Forms.Button btnQuery;
         private System.Windows.Forms.Button btnSubmit;
         private System.Windows.Forms.DataGridView dgvRecords;
-        private System.Windows.Forms.DataGridViewCheckBoxColumn colSelect;
         private System.Windows.Forms.Panel panelBottom;
         private System.Windows.Forms.Label lblCount;
+        private DataGridViewCheckBoxColumn colSelect;
     }
 }

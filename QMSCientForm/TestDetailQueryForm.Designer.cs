@@ -20,6 +20,7 @@ namespace QMSCientForm
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TestDetailQueryForm));
             this.panelTop = new System.Windows.Forms.Panel();
             this.lblTitle = new System.Windows.Forms.Label();
             this.panelBottom = new System.Windows.Forms.Panel();
@@ -113,6 +114,7 @@ namespace QMSCientForm
             this.Controls.Add(this.dgvDetails);
             this.Controls.Add(this.panelBottom);
             this.Controls.Add(this.panelTop);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "TestDetailQueryForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "试验项点明细查询";
