@@ -112,6 +112,7 @@ namespace QMSCientForm
                 lblStatus.ForeColor = Color.Orange;
 
                 cancellationTokenSource.Cancel();
+                this.Close();
             }
         }
 

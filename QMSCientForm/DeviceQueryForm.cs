@@ -232,7 +232,7 @@ namespace QMSCientForm
                 dgvRecords.Columns["判定"].Width = 80;
 
             if (dgvRecords.Columns["同步状态"] != null)
-                dgvRecords.Columns["同步状态"].Visible = false;
+                dgvRecords.Columns["同步状态"].Width = 80;
         }
 
         /// <summary>

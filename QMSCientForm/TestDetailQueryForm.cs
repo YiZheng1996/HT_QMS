@@ -47,7 +47,10 @@ namespace QMSCientForm
                     标准值 = d.standard_range,
                     实测值 = d.cell_value,
                     单位 = d.paraunit,
-                    判定 = d.test_result
+                    判定 = d.test_result,
+                    同步状态 = GetQmsStatusText(d.qms_status),
+                    同步时间 = d.qms_time,
+                    同步信息 = d.qms_response
                 }).ToList();
 
                 // 绑定到DataGridView
@@ -85,5 +88,21 @@ namespace QMSCientForm
         {
             this.Close();
         }
+
+        #region 辅助方法
+        /// <summary>
+        /// 获取QMS状态文本
+        /// </summary>
+        private string GetQmsStatusText(string status)
+        {
+            switch (status)
+            {
+                case "0": return "未同步";
+                case "1": return "已同步";
+                case "2": return "同步失败";
+                default: return "未同步";
+            }
+        }
+        #endregion
     }
 }

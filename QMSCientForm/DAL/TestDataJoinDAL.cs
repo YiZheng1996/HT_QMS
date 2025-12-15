@@ -298,7 +298,10 @@ namespace QMSCientForm.DAL
                     tm.standmin,
                     tm.standmax,
                     td.create_time,
-                    tm.remark
+                    tm.remark,
+                    td.qms_status,
+                    td.qms_time,
+                    td.qms_response,
                 });
 
             // 按 cell_name 分组,每组只取最新的一条
@@ -314,7 +317,10 @@ namespace QMSCientForm.DAL
                     standard_range = $"{t.standmin}-{t.standmax}",
                     test_result = CheckTestResult(t.cell_value, t.standmin, t.standmax),
                     create_time = t.create_time,
-                    test_remark = t.remark
+                    test_remark = t.remark,
+                    qms_status = t.qms_status,
+                    qms_time = t.qms_time.ToString("yyyy-MM-dd HH:mm:ss"),
+                    qms_response = t.qms_response
                 })
                 .ToList();
         }
@@ -333,6 +339,10 @@ namespace QMSCientForm.DAL
             public string test_result { get; set; }
             public string test_remark { get; set; }
             public DateTime create_time { get; set; }
+            // 接口信息
+            public string qms_status { get; set; }
+            public string qms_time { get; set; }
+            public string qms_response { get; set; }
         }
         #endregion
     }
