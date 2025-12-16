@@ -170,13 +170,21 @@ namespace QMSCientForm
                 string spec = txtSpec.Text.Trim();
                 string mfgno = txtMfgno.Text.Trim();
 
-                // 查询产品信息
-                var products = productDAL.GetByConditions(
+                // 使用新方法查询(带同步状态)
+                var products = productDAL.GetProductsWithSyncStatus(
                     projectno: projectNo,
                     train: train,
                     spec: spec,
                     mfgno: mfgno
                 );
+
+                //// 查询产品信息
+                //var products = productDAL.GetByConditions(
+                //    projectno: projectNo,
+                //    train: train,
+                //    spec: spec,
+                //    mfgno: mfgno
+                //);
 
                 // 绑定到DataGridView
                 dgvProducts.DataSource = null;
@@ -275,13 +283,27 @@ namespace QMSCientForm
                 var recordIdList = new List<int>();
                 var testModelDAL = new TestModelDAL();
 
+                // 统计有测试数据的产品数量
+                int productCountWithData = 0;
+
                 foreach (var row in selectedRows)
                 {
-                    var product = row.DataBoundItem as ProductInfoModel;
-                    if (product == null) continue;
+                    // 从 ProductWithSyncStatus 获取
+                    var productWithStatus = row.DataBoundItem as ProductInfoDAL.ProductWithSyncStatus;
+                    if (productWithStatus == null) continue;
+
+                    // 跳过无测试数据的产品
+                    if (productWithStatus.total_count == 0)
+                    {
+                        continue;
+                    }
+
+                    productCountWithData++;
 
                     // 使用 mfgno + spec 获取测试数据
-                    var testDataList = testDataDAL.GetLatestByMfgnoAndSpec(product.mfgno, product.spec);
+                    var testDataList = testDataDAL.GetLatestByMfgnoAndSpec(
+                        productWithStatus.mfgno,
+                        productWithStatus.spec);
 
                     foreach (var testData in testDataList)
                     {
@@ -289,8 +311,8 @@ namespace QMSCientForm
                         var testModel = testModelDAL.GetBySpecAndParaname(testData.spec, testData.cell_name);
                         var request = new ProdInfoRequest
                         {
-                            projectNo = product.projectno,
-                            productNo = product.mfgno,
+                            projectNo = productWithStatus.projectno,    // ✅ 修改
+                            productNo = productWithStatus.mfgno,        // ✅ 修改
                             paraName = testModel.paraname,
                             paraUnit = testModel.paraunit,
                             standValue = $"{testModel.standmin}-{testModel.standmax}",
@@ -305,14 +327,30 @@ namespace QMSCientForm
 
                 if (requestList.Count == 0)
                 {
-                    MessageBox.Show("没有可发送的数据", "提示",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    // 提示更详细的信息
+                    if (productCountWithData == 0)
+                    {
+                        MessageBox.Show(
+                            "选中的产品都没有测试数据，无法发送。\n\n" +
+                            "请选择有测试数据的产品。",
+                            "提示",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show("没有可发送的数据", "提示",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
                     return;
                 }
 
+                // 显示更详细的确认信息
                 if (MessageBox.Show(
-                    $"准备发送 {requestList.Count} 条数据到QMS\n" +
-                    $"预计耗时约 {requestList.Count * 0.2} 秒\n\n确定继续？",
+                    $"准备发送:\n" +
+                    $"  产品数量: {productCountWithData} 个\n" +
+                    $"  测试项数: {requestList.Count} 条\n" +
+                    $"  预计耗时: 约 {requestList.Count * 0.2:F1} 秒\n\n" +
+                    $"确定继续？",
                     "确认", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
                 {
                     return;
@@ -336,7 +374,6 @@ namespace QMSCientForm
                     // 创建进度报告器
                     var progress = new Progress<UploadProgressReport>(report =>
                     {
-
                         // 更新数据库状态
                         int testId = recordIdList[report.Current - 1];
                         if (report.Response.IsSuccess)
@@ -373,6 +410,23 @@ namespace QMSCientForm
                     {
                         progressForm.SetCompleted(result.SuccessCount, result.FailCount);
                     }
+
+                    // 新增: 上传完成后自动刷新查询（更新同步状态）
+                    if (result.SuccessCount > 0 || result.FailCount > 0)
+                    {
+                        // 等待进度窗口关闭后再刷新
+                        await System.Threading.Tasks.Task.Delay(1000).ContinueWith(t =>
+                         {
+                             if (this.InvokeRequired)
+                             {
+                                 this.Invoke(new Action(() => btnQuery_Click(null, null)));
+                             }
+                             else
+                             {
+                                 btnQuery_Click(null, null);
+                             }
+                         });
+                    }
                 }
                 finally
                 {
@@ -401,17 +455,36 @@ namespace QMSCientForm
             {
                 if (e.RowIndex < 0) return;
 
-                var product = dgvProducts.Rows[e.RowIndex].DataBoundItem as ProductInfoModel;
-                if (product == null) return;
+                // 从 ProductWithSyncStatus 获取数据
+                var productWithStatus = dgvProducts.Rows[e.RowIndex].DataBoundItem
+                    as ProductInfoDAL.ProductWithSyncStatus;
 
-                // 使用 mfgno + spec 检查是否有测试数据
-                var testDataList = testDataDAL.GetLatestByMfgnoAndSpec(product.mfgno, product.spec);
-                if (testDataList == null || testDataList.Count == 0)
+                if (productWithStatus == null) return;
+
+                // 检查是否有测试数据
+                if (productWithStatus.total_count == 0)
                 {
-                    MessageBox.Show(this, $"产品型号 {product.spec}\n\n制造编号 {product.mfgno}\n\n暂无测试数据。", "提示",
-                        MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    MessageBox.Show(
+                        $"产品型号: {productWithStatus.spec}\n" +
+                        $"制造编号: {productWithStatus.mfgno}\n\n" +
+                        $"暂无测试数据。",
+                        "提示",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
                     return;
                 }
+
+                // 创建临时 ProductInfoModel 对象传递给详情窗口
+                var product = new ProductInfoModel
+                {
+                    id = productWithStatus.id,
+                    projectno = productWithStatus.projectno,
+                    projectname = productWithStatus.projectname,
+                    train = productWithStatus.train,
+                    spec = productWithStatus.spec,
+                    mfgno = productWithStatus.mfgno,
+                    create_time = productWithStatus.create_time
+                };
 
                 // 打开试验项点明细查询弹窗
                 TestDetailQueryForm detailForm = new TestDetailQueryForm(product);
