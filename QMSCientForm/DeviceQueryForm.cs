@@ -304,11 +304,21 @@ namespace QMSCientForm
                 // DeviceRecord表记录Id列表，修改接口调用信息
                 var recordIdList = new List<int>();
 
+                // 跳过已经同步的数量
+                int skippedCount = 0; 
+
                 foreach (var row in selectedRows)
                 {
                     int recordId = Convert.ToInt32(row.Cells["RecordId"].Value);
                     var record = recordDAL.GetById(recordId);
                     if (record == null) continue;
+
+                    // 跳过已同步的数据
+                    if (record.qms_status == "1")
+                    {
+                        skippedCount++;
+                        continue;
+                    }
 
                     // 添加请求对象
                     var request = new DeviceInfoRequest
@@ -324,10 +334,34 @@ namespace QMSCientForm
                     recordIdList.Add(recordId); // 添加记录ID到列表
                 }
 
+                // 情况1：全部记录都已同步
+                if (skippedCount > 0 && requestList.Count == 0)
+                {
+                    MessageBox.Show(
+                        $"选中的 {skippedCount} 条记录都已同步完成，无需重复上传。",
+                        "提示",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                // 情况2：其他原因导致没有可发送数据
                 if (requestList.Count == 0)
                 {
-                    MessageBox.Show("没有可发送的数据", "提示",
+                    MessageBox.Show("选中的记录无效，无法发送。", "提示",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+
+                string confirmMessage = $"确定要发送选中的 {requestList.Count} 条设备记录到QMS吗？";
+                if (skippedCount > 0)
+                {
+                    confirmMessage += $"\n\n（已跳过 {skippedCount} 条已同步的数据）";
+                }
+
+                if (MessageBox.Show(confirmMessage, "确认",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                {
                     return;
                 }
 

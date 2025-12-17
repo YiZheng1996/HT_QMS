@@ -75,9 +75,10 @@ namespace QMSCientForm
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "UploadProgressForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "上传进度";
             this.ResumeLayout(false);
+
         }
     }
 }

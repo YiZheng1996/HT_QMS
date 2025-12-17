@@ -178,14 +178,6 @@ namespace QMSCientForm
                     mfgno: mfgno
                 );
 
-                //// 查询产品信息
-                //var products = productDAL.GetByConditions(
-                //    projectno: projectNo,
-                //    train: train,
-                //    spec: spec,
-                //    mfgno: mfgno
-                //);
-
                 // 绑定到DataGridView
                 dgvProducts.DataSource = null;
                 dgvProducts.DataSource = products;
@@ -215,7 +207,7 @@ namespace QMSCientForm
                 if (dgvProducts.Columns["projectname"] != null)
                 {
                     dgvProducts.Columns["projectname"].HeaderText = "项目名称";
-                    dgvProducts.Columns["projectname"].Width = 200;
+                    dgvProducts.Columns["projectname"].Width = 350;
                 }
 
                 if (dgvProducts.Columns["train"] != null)
@@ -226,6 +218,32 @@ namespace QMSCientForm
 
                 if (dgvProducts.Columns["mfgno"] != null)
                     dgvProducts.Columns["mfgno"].HeaderText = "制造编号";
+
+                // 新增：设置同步状态相关列的中文标题
+                if (dgvProducts.Columns["total_count"] != null)
+                {
+                    dgvProducts.Columns["total_count"].HeaderText = "测试项总数";
+                    //dgvProducts.Columns["total_count"].Width = 90;
+                }
+
+                if (dgvProducts.Columns["synced_count"] != null)
+                {
+                    dgvProducts.Columns["synced_count"].HeaderText = "已同步数量";
+                    //dgvProducts.Columns["synced_count"].Width = 80;
+                }
+
+                if (dgvProducts.Columns["failed_count"] != null)
+                {
+                    dgvProducts.Columns["failed_count"].HeaderText = "同步失败数量";
+                    //dgvProducts.Columns["failed_count"].Width = 80;
+                }
+
+                if (dgvProducts.Columns["sync_status"] != null)
+                {
+                    dgvProducts.Columns["sync_status"].HeaderText = "同步状态数量";
+                    //dgvProducts.Columns["sync_status"].Width = 120;
+                }
+
 
                 // 隐藏不需要的列
                 if (dgvProducts.Columns["create_time"] != null)
@@ -286,6 +304,12 @@ namespace QMSCientForm
                 // 统计有测试数据的产品数量
                 int productCountWithData = 0;
 
+                // 无测试数据的产品数
+                int productCountNoData = 0;
+
+                // 跳过的数量
+                int skippedCount = 0;
+
                 foreach (var row in selectedRows)
                 {
                     // 从 ProductWithSyncStatus 获取
@@ -295,9 +319,11 @@ namespace QMSCientForm
                     // 跳过无测试数据的产品
                     if (productWithStatus.total_count == 0)
                     {
+                        productCountNoData++;
                         continue;
                     }
 
+                    // 有测试数据的产品
                     productCountWithData++;
 
                     // 使用 mfgno + spec 获取测试数据
@@ -307,12 +333,19 @@ namespace QMSCientForm
 
                     foreach (var testData in testDataList)
                     {
+                        // 跳过已同步的数据
+                        if (testData.qms_status == "1")
+                        {
+                            skippedCount++;
+                            continue;
+                        }
+
                         // 根据 spec + cell_name 查询 TestModel
                         var testModel = testModelDAL.GetBySpecAndParaname(testData.spec, testData.cell_name);
                         var request = new ProdInfoRequest
                         {
-                            projectNo = productWithStatus.projectno,    // ✅ 修改
-                            productNo = productWithStatus.mfgno,        // ✅ 修改
+                            projectNo = productWithStatus.projectno,
+                            productNo = productWithStatus.mfgno,
                             paraName = testModel.paraname,
                             paraUnit = testModel.paraunit,
                             standValue = $"{testModel.standmin}-{testModel.standmax}",
@@ -325,33 +358,57 @@ namespace QMSCientForm
                     }
                 }
 
-                if (requestList.Count == 0)
+                // 情况1：全部产品都没有测试数据
+                if (productCountNoData == selectedRows.Count)
                 {
-                    // 提示更详细的信息
-                    if (productCountWithData == 0)
-                    {
-                        MessageBox.Show(
-                            "选中的产品都没有测试数据，无法发送。\n\n" +
-                            "请选择有测试数据的产品。",
-                            "提示",
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                    else
-                    {
-                        MessageBox.Show("没有可发送的数据", "提示",
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
+                    MessageBox.Show(
+                        $"选中的 {selectedRows.Count} 个产品都没有测试数据，无法发送。",
+                        "提示",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
 
-                // 显示更详细的确认信息
-                if (MessageBox.Show(
-                    $"准备发送:\n" +
+                // 情况2：有测试数据，但全部都已同步
+                if (skippedCount > 0 && requestList.Count == 0)
+                {
+                    string message = $"选中的测试数据都已同步完成，无需重复上传。\n\n" +
+                                     $"统计信息：\n" +
+                                     $"  • 有测试数据的产品：{productCountWithData} 个\n" +
+                                     $"  • 已同步的测试项：{skippedCount} 条";
+
+                    if (productCountNoData > 0)
+                    {
+                        message += $"\n  • 无测试数据的产品：{productCountNoData} 个";
+                    }
+
+                    MessageBox.Show(message, "提示",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                // 情况3：其他导致没有可发送数据的情况
+                if (requestList.Count == 0)
+                {
+                    MessageBox.Show("没有可发送的数据", "提示",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+
+                // 显示更详细的确认信息（包含跳过数量）
+                string confirmMessage = $"准备发送:\n" +
                     $"  产品数量: {productCountWithData} 个\n" +
-                    $"  测试项数: {requestList.Count} 条\n" +
-                    $"  预计耗时: 约 {requestList.Count * 0.2:F1} 秒\n\n" +
-                    $"确定继续？",
-                    "确认", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                    $"  测试项数: {requestList.Count} 条\n";
+
+                if (skippedCount > 0)
+                {
+                    confirmMessage += $"  已跳过: {skippedCount} 条（已同步）\n";
+                }
+
+                confirmMessage += $"  预计耗时: 约 {requestList.Count * 0.2:F1} 秒\n\n确定继续？";
+
+                if (MessageBox.Show(confirmMessage, "确认",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
                 {
                     return;
                 }
