@@ -33,9 +33,11 @@ namespace QMSCientForm
         private void AddHeaderCheckBox()
         {
             // 创建 checkbox 控件
-            CheckBox headerCheckBox = new CheckBox();
-            headerCheckBox.Size = new Size(15, 15);
-            headerCheckBox.BackColor = Color.Transparent;
+            CheckBox headerCheckBox = new CheckBox
+            {
+                Size = new Size(15, 15),
+                BackColor = Color.Transparent
+            };
 
             // 添加点击事件
             headerCheckBox.CheckedChanged += (sender, e) =>
@@ -151,6 +153,30 @@ namespace QMSCientForm
                     var deviceNos = devices.Select(d => d.deviceno).ToList();
                     records = records.Where(r => deviceNos.Contains(r.deviceno)).ToList();
                 }
+
+                // 对记录进行去重处理:同一日期内,开机取最早,关机取最晚
+                var filteredRecords = records
+                    .GroupBy(r => new { r.deviceno, r.create_time.Date, r.type })
+                    .SelectMany(g =>
+                    {
+                        if (g.Key.type == "正常开机")
+                        {
+                            // 开机记录取最早的
+                            return new[] { g.OrderBy(r => r.create_time).First() };
+                        }
+                        else if (g.Key.type == "正常关机")
+                        {
+                            // 关机记录取最晚的
+                            return new[] { g.OrderByDescending(r => r.create_time).First() };
+                        }
+                        else
+                        {
+                            // 其他类型的记录(故障、恢复)全部保留
+                            return g.ToArray();
+                        }
+                    })
+                    .OrderByDescending(r => r.create_time)
+                    .ToList();
 
                 // 绑定到DataGridView
                 BindRecords(records);

@@ -1,13 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
 using QMSCientForm.DAL;
 using QMSCientForm.Model;
 using QMSCientForm.QMS;
 using QMSCientForm.QMS.Models;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace QMSCientForm
 {
@@ -158,10 +159,24 @@ namespace QMSCientForm
         /// <summary>
         /// 查询按钮点击事件
         /// </summary>
-        private void btnQuery_Click(object sender, EventArgs e)
+        private async void btnQuery_Click(object sender, EventArgs e)
         {
+            // 记录开始时间
+            var startTime = DateTime.Now;
+
             try
             {
+                // 显示加载提示
+                lblCount.Text = "正在查询，请稍候...";
+                lblCount.ForeColor = Color.Blue;
+                dgvProducts.DataSource = null;
+
+                // 禁用控件，防止重复点击
+                btnQuery.Enabled = false;
+                btnSubmit.Enabled = false;
+                panelTop.Enabled = false;
+                this.Cursor = Cursors.WaitCursor;
+
                 // 获取查询条件
                 string projectNo = cmbProject.SelectedItem?.ToString();
                 if (projectNo == "全选") projectNo = null;
@@ -170,29 +185,31 @@ namespace QMSCientForm
                 string spec = txtSpec.Text.Trim();
                 string mfgno = txtMfgno.Text.Trim();
 
-                // 使用新方法查询(带同步状态)
-                var products = productDAL.GetProductsWithSyncStatus(
-                    projectno: projectNo,
-                    train: train,
-                    spec: spec,
-                    mfgno: mfgno
+                // 使用 Task.Run 异步执行查询，避免阻塞UI线程
+                var products = await Task.Run(() =>
+                    productDAL.GetProductsWithSyncStatus(
+                        projectno: projectNo,
+                        train: train,
+                        spec: spec,
+                        mfgno: mfgno
+                    )
                 );
 
+                // 计算查询耗时
+                var elapsed = DateTime.Now - startTime;
+
                 // 绑定到DataGridView
-                dgvProducts.DataSource = null;
                 dgvProducts.DataSource = products;
 
-                // 数据绑定后,设置列的只读属性
+                // 设置列的只读属性
                 foreach (DataGridViewColumn column in dgvProducts.Columns)
                 {
-                    // checkbox 列保持可编辑
                     if (column.Name == "colSelect")
                     {
                         column.ReadOnly = false;
                     }
                     else
                     {
-                        // 其他列设为只读
                         column.ReadOnly = true;
                     }
                 }
@@ -207,7 +224,7 @@ namespace QMSCientForm
                 if (dgvProducts.Columns["projectname"] != null)
                 {
                     dgvProducts.Columns["projectname"].HeaderText = "项目名称";
-                    dgvProducts.Columns["projectname"].Width = 350;
+                    dgvProducts.Columns["projectname"].Width = 200;
                 }
 
                 if (dgvProducts.Columns["train"] != null)
@@ -219,60 +236,45 @@ namespace QMSCientForm
                 if (dgvProducts.Columns["mfgno"] != null)
                     dgvProducts.Columns["mfgno"].HeaderText = "制造编号";
 
-                // 新增：设置同步状态相关列的中文标题
-                if (dgvProducts.Columns["total_count"] != null)
-                {
-                    dgvProducts.Columns["total_count"].HeaderText = "测试项总数";
-                    //dgvProducts.Columns["total_count"].Width = 90;
-                }
-
-                if (dgvProducts.Columns["synced_count"] != null)
-                {
-                    dgvProducts.Columns["synced_count"].HeaderText = "已同步数量";
-                    //dgvProducts.Columns["synced_count"].Width = 80;
-                }
-
-                if (dgvProducts.Columns["failed_count"] != null)
-                {
-                    dgvProducts.Columns["failed_count"].HeaderText = "同步失败数量";
-                    //dgvProducts.Columns["failed_count"].Width = 80;
-                }
-
-                if (dgvProducts.Columns["sync_status"] != null)
-                {
-                    dgvProducts.Columns["sync_status"].HeaderText = "同步状态数量";
-                    //dgvProducts.Columns["sync_status"].Width = 120;
-                }
-
-
-                // 隐藏不需要的列
                 if (dgvProducts.Columns["create_time"] != null)
                     dgvProducts.Columns["create_time"].Visible = false;
 
-                if (dgvProducts.Columns["qms_status"] != null)
-                    dgvProducts.Columns["qms_status"].Visible = false;
+                // 更新统计信息（显示耗时）
+                lblCount.Text = $"共 {products.Count} 条记录 (查询耗时: {elapsed.TotalSeconds:F2}秒)";
+                lblCount.ForeColor = elapsed.TotalSeconds > 2 ? Color.Red : Color.Green;
 
-                if (dgvProducts.Columns["qms_time"] != null)
-                    dgvProducts.Columns["qms_time"].Visible = false;
-
-                if (dgvProducts.Columns["qms_rem"] != null)
-                    dgvProducts.Columns["qms_rem"].Visible = false;
-
-                if (dgvProducts.Columns["prdt_code"] != null)
-                    dgvProducts.Columns["prdt_code"].Visible = false;
-
-                if (dgvProducts.Columns["productname"] != null)
-                    dgvProducts.Columns["productname"].Visible = false;
-
-                if (dgvProducts.Columns["virsn"] != null)
-                    dgvProducts.Columns["virsn"].Visible = false;
-
-                lblCount.Text = $"共 {products.Count} 条记录";
+                // 如果查询很慢，给出提示
+                if (elapsed.TotalSeconds > 3)
+                {
+                    MessageBox.Show(
+                        $"查询耗时较长({elapsed.TotalSeconds:F2}秒)！\n\n" +
+                        $"可能原因：\n" +
+                        $"1. 数据库索引未创建\n" +
+                        $"2. 数据量过大\n" +
+                        $"3. 网络延迟\n\n" +
+                        $"建议：\n" +
+                        $"1. 执行 PerformanceDiagnosis.sql 诊断问题\n" +
+                        $"2. 执行 CreateIndexes.sql 创建索引\n" +
+                        $"3. 缩小查询范围",
+                        "性能提示",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"查询失败：{ex.Message}", "错误",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                lblCount.Text = "查询失败";
+                lblCount.ForeColor = Color.Red;
+                MessageBox.Show($"查询失败：{ex.Message}\n\n详细信息：{ex.StackTrace}",
+                    "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                // 恢复控件状态
+                btnQuery.Enabled = true;
+                btnSubmit.Enabled = true;
+                panelTop.Enabled = true;
+                this.Cursor = Cursors.Default;
             }
         }
 
@@ -313,8 +315,7 @@ namespace QMSCientForm
                 foreach (var row in selectedRows)
                 {
                     // 从 ProductWithSyncStatus 获取
-                    var productWithStatus = row.DataBoundItem as ProductInfoDAL.ProductWithSyncStatus;
-                    if (productWithStatus == null) continue;
+                    if (!(row.DataBoundItem is ProductInfoDAL.ProductWithSyncStatus productWithStatus)) continue;
 
                     // 跳过无测试数据的产品
                     if (productWithStatus.total_count == 0)
@@ -393,7 +394,6 @@ namespace QMSCientForm
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
-
 
                 // 显示更详细的确认信息（包含跳过数量）
                 string confirmMessage = $"准备发送:\n" +
@@ -513,10 +513,7 @@ namespace QMSCientForm
                 if (e.RowIndex < 0) return;
 
                 // 从 ProductWithSyncStatus 获取数据
-                var productWithStatus = dgvProducts.Rows[e.RowIndex].DataBoundItem
-                    as ProductInfoDAL.ProductWithSyncStatus;
-
-                if (productWithStatus == null) return;
+                if (!(dgvProducts.Rows[e.RowIndex].DataBoundItem is ProductInfoDAL.ProductWithSyncStatus productWithStatus)) return;
 
                 // 检查是否有测试数据
                 if (productWithStatus.total_count == 0)
