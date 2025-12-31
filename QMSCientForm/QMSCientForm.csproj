@@ -139,6 +139,7 @@
     <Compile Include="UploadProgressForm.Designer.cs">
       <DependentUpon>UploadProgressForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Utils\Logger.cs" />
     <EmbeddedResource Include="DeviceQueryForm.resx">
       <DependentUpon>DeviceQueryForm.cs</DependentUpon>
     </EmbeddedResource>
